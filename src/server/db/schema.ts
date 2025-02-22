@@ -1,129 +1,140 @@
-import { relations, sql } from "drizzle-orm";
 import {
-  index,
-  integer,
-  pgTableCreator,
-  primaryKey,
-  text,
-  timestamp,
+  pgTable,
+  serial,
   varchar,
+  text,
+  integer,
+  decimal,
+  timestamp,
+  date,
+  boolean,
+  pgTableCreator,
 } from "drizzle-orm/pg-core";
-import { type AdapterAccount } from "next-auth/adapters";
 
-/**
- * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
- * database instance for multiple projects.
- *
- * @see https://orm.drizzle.team/docs/goodies#multi-project-schema
- */
 export const createTable = pgTableCreator((name) => `finance-tracker_${name}`);
 
-export const posts = createTable(
-  "post",
-  {
-    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
-    name: varchar("name", { length: 256 }),
-    createdById: varchar("created_by", { length: 255 })
-      .notNull()
-      .references(() => users.id),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-      () => new Date()
-    ),
-  },
-  (example) => ({
-    createdByIdIdx: index("created_by_idx").on(example.createdById),
-    nameIndex: index("name_idx").on(example.name),
-  })
-);
-
-export const users = createTable("user", {
-  id: varchar("id", { length: 255 })
-    .notNull()
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  name: varchar("name", { length: 255 }),
-  email: varchar("email", { length: 255 }).notNull(),
-  emailVerified: timestamp("email_verified", {
-    mode: "date",
-    withTimezone: true,
-  }).default(sql`CURRENT_TIMESTAMP`),
-  image: varchar("image", { length: 255 }),
+// Users Table
+export const users = createTable("users", {
+  user_id: serial("user_id").primaryKey(),
+  username: varchar("username", { length: 50 }).notNull().unique(),
+  email: varchar("email", { length: 100 }).notNull().unique(),
+  password_hash: varchar("password_hash", { length: 255 }).notNull(),
+  created_at: timestamp("created_at").defaultNow(),
 });
 
-export const usersRelations = relations(users, ({ many }) => ({
-  accounts: many(accounts),
-}));
+// Accounts Table
+export const accounts = createTable("accounts", {
+  account_id: serial("account_id").primaryKey(),
+  user_id: integer("user_id")
+    .references(() => users.user_id)
+    .notNull(),
+  name: varchar("name", { length: 50 }).notNull(),
+  type: varchar("type", { length: 20 }).notNull(), // e.g., 'savings', 'checking', 'cash', 'gold', 'credit_card', 'loan', 'mortgage'
+  is_liability: boolean("is_liability").notNull().default(false), // true for debts/liabilities, false for assets
+  currency: varchar("currency", { length: 3 }).notNull(),
+  balance: decimal("balance", { precision: 12, scale: 2 }).default("0"),
+  created_at: timestamp("created_at").defaultNow(),
+});
 
-export const accounts = createTable(
-  "account",
-  {
-    userId: varchar("user_id", { length: 255 })
-      .notNull()
-      .references(() => users.id),
-    type: varchar("type", { length: 255 })
-      .$type<AdapterAccount["type"]>()
-      .notNull(),
-    provider: varchar("provider", { length: 255 }).notNull(),
-    providerAccountId: varchar("provider_account_id", {
-      length: 255,
-    }).notNull(),
-    refresh_token: text("refresh_token"),
-    access_token: text("access_token"),
-    expires_at: integer("expires_at"),
-    token_type: varchar("token_type", { length: 255 }),
-    scope: varchar("scope", { length: 255 }),
-    id_token: text("id_token"),
-    session_state: varchar("session_state", { length: 255 }),
-  },
-  (account) => ({
-    compoundKey: primaryKey({
-      columns: [account.provider, account.providerAccountId],
-    }),
-    userIdIdx: index("account_user_id_idx").on(account.userId),
-  })
-);
+// Transactions Table
+export const transactions = createTable("transactions", {
+  transaction_id: serial("transaction_id").primaryKey(),
+  account_id: integer("account_id")
+    .references(() => accounts.account_id)
+    .notNull(),
+  transaction_date: date("transaction_date").notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  description: text("description"),
+  category: varchar("category", { length: 50 }),
+  original_currency: varchar("original_currency", { length: 3 }).notNull(),
+  conversion_rate: decimal("conversion_rate", {
+    precision: 10,
+    scale: 6,
+  }).default("1.0"),
+  created_at: timestamp("created_at").defaultNow(),
+});
 
-export const accountsRelations = relations(accounts, ({ one }) => ({
-  user: one(users, { fields: [accounts.userId], references: [users.id] }),
-}));
+// CurrencyRates Table
+export const currencyRates = createTable("currency_rates", {
+  rate_id: serial("rate_id").primaryKey(),
+  base_currency: varchar("base_currency", { length: 3 }).notNull(),
+  target_currency: varchar("target_currency", { length: 3 }).notNull(),
+  rate: decimal("rate", { precision: 10, scale: 6 }).notNull(),
+  updated_at: timestamp("updated_at").notNull(),
+});
 
-export const sessions = createTable(
-  "session",
-  {
-    sessionToken: varchar("session_token", { length: 255 })
-      .notNull()
-      .primaryKey(),
-    userId: varchar("user_id", { length: 255 })
-      .notNull()
-      .references(() => users.id),
-    expires: timestamp("expires", {
-      mode: "date",
-      withTimezone: true,
-    }).notNull(),
-  },
-  (session) => ({
-    userIdIdx: index("session_user_id_idx").on(session.userId),
-  })
-);
+// Snapshots Table
+export const snapshots = createTable("snapshots", {
+  snapshot_id: serial("snapshot_id").primaryKey(),
+  user_id: integer("user_id")
+    .references(() => users.user_id)
+    .notNull(),
+  snapshot_date: date("snapshot_date").notNull(),
+  net_liquid: decimal("net_liquid", { precision: 12, scale: 2 }),
+  net_savings: decimal("net_savings", { precision: 12, scale: 2 }),
+  net_total: decimal("net_total", { precision: 12, scale: 2 }),
+  created_at: timestamp("created_at").defaultNow(),
+});
 
-export const sessionsRelations = relations(sessions, ({ one }) => ({
-  user: one(users, { fields: [sessions.userId], references: [users.id] }),
-}));
+// BankStatements Table (Optional)
+export const bankStatements = createTable("bank_statements", {
+  statement_id: serial("statement_id").primaryKey(),
+  user_id: integer("user_id")
+    .references(() => users.user_id)
+    .notNull(),
+  file_name: text("file_name").notNull(),
+  file_path: text("file_path").notNull(),
+  uploaded_at: timestamp("uploaded_at").defaultNow(),
+});
 
-export const verificationTokens = createTable(
-  "verification_token",
-  {
-    identifier: varchar("identifier", { length: 255 }).notNull(),
-    token: varchar("token", { length: 255 }).notNull(),
-    expires: timestamp("expires", {
-      mode: "date",
-      withTimezone: true,
-    }).notNull(),
-  },
-  (vt) => ({
-    compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
-  })
-);
+// Snapshot_Details Table (Additional Table)
+export const snapshotDetails = createTable("snapshot_details", {
+  snapshot_detail_id: serial("snapshot_detail_id").primaryKey(),
+  snapshot_id: integer("snapshot_id")
+    .references(() => snapshots.snapshot_id, { onDelete: "cascade" })
+    .notNull(),
+  account_id: integer("account_id")
+    .references(() => accounts.account_id)
+    .notNull(),
+  balance: decimal("balance", { precision: 12, scale: 2 }).notNull(),
+  conversion_rate: decimal("conversion_rate", {
+    precision: 10,
+    scale: 6,
+  }).default("1.0"),
+  recorded_at: timestamp("recorded_at").defaultNow(),
+});
+
+// Installment Plans Table
+export const installmentPlans = createTable("installment_plans", {
+  installment_plan_id: serial("installment_plan_id").primaryKey(),
+  user_id: integer("user_id")
+    .references(() => users.user_id)
+    .notNull(),
+  account_id: integer("account_id")
+    .references(() => accounts.account_id)
+    .notNull(),
+  description: text("description"), // e.g., "Laptop Purchase Installments"
+  original_amount: decimal("original_amount", {
+    precision: 12,
+    scale: 2,
+  }).notNull(),
+  number_of_installments: integer("number_of_installments").notNull(),
+  interest_rate: decimal("interest_rate", { precision: 5, scale: 2 }).default(
+    "0",
+  ), // Percentage, if applicable
+  start_date: date("start_date").notNull(), // Date when installments begin
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+// Installment Payments Table
+export const installmentPayments = createTable("installment_payments", {
+  installment_payment_id: serial("installment_payment_id").primaryKey(),
+  installment_plan_id: integer("installment_plan_id")
+    .references(() => installmentPlans.installment_plan_id)
+    .notNull(),
+  due_date: date("due_date").notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  payment_date: date("payment_date"), // Nullable; set once the payment is made
+  status: varchar("status", { length: 20 }).default("pending"), // e.g., pending, paid, late
+  created_at: timestamp("created_at").defaultNow(),
+});
