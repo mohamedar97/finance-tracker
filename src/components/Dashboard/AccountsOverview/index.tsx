@@ -48,7 +48,7 @@ const accounts: Account[] = [
 
 export function AccountsOverview() {
   return (
-    <ScrollArea className="h-[600px]">
+    <ScrollArea className="h-[350px] lg:h-[calc(100vh-400px)]">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {accounts.map((account) => (
           <Card key={account.id}>

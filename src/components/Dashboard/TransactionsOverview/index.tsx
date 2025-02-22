@@ -16,6 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { SlidersHorizontal, X } from "lucide-react";
 import { useState } from "react";
 
 interface Transaction {
@@ -96,6 +103,7 @@ export function TransactionsOverview() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedAccount, setSelectedAccount] = useState("All");
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   const filteredTransactions = transactions.filter((transaction) => {
     const matchesSearch = transaction.description
@@ -108,78 +116,197 @@ export function TransactionsOverview() {
     return matchesSearch && matchesCategory && matchesAccount;
   });
 
+  const activeFiltersCount = [
+    selectedCategory !== "All" ? 1 : 0,
+    selectedAccount !== "All" ? 1 : 0,
+  ].reduce((a, b) => a + b, 0);
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-col space-y-4 md:flex-row md:space-x-4 md:space-y-0">
+      {/* Mobile Filters */}
+      <div className="flex items-center gap-2 sm:hidden">
         <Input
           placeholder="Search transactions..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="md:w-1/3"
+          className="w-full"
         />
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="md:w-1/4">
-            <SelectValue placeholder="Category" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map((category) => (
-              <SelectItem key={category} value={category}>
-                {category}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={selectedAccount} onValueChange={setSelectedAccount}>
-          <SelectTrigger className="md:w-1/4">
-            <SelectValue placeholder="Account" />
-          </SelectTrigger>
-          <SelectContent>
-            {accounts.map((account) => (
-              <SelectItem key={account} value={account}>
-                {account}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <ScrollArea className="h-[600px]">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Account</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredTransactions.map((transaction) => (
-              <TableRow key={transaction.id}>
-                <TableCell>
-                  {new Date(transaction.date).toLocaleDateString()}
-                </TableCell>
-                <TableCell>{transaction.description}</TableCell>
-                <TableCell>{transaction.category}</TableCell>
-                <TableCell>{transaction.account}</TableCell>
-                <TableCell
-                  className={`text-right ${
-                    transaction.type === "income"
-                      ? "text-green-600"
-                      : "text-red-600"
-                  }`}
+        <Popover open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="relative shrink-0">
+              <SlidersHorizontal className="h-4 w-4" />
+              {activeFiltersCount > 0 && (
+                <div className="bg-primary text-primary-foreground absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full text-xs">
+                  {activeFiltersCount}
+                </div>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium">Filters</h4>
+              </div>
+              <div className="space-y-2">
+                <Select
+                  value={selectedCategory}
+                  onValueChange={setSelectedCategory}
                 >
-                  {new Intl.NumberFormat("en-US", {
-                    style: "currency",
-                    currency: "USD",
-                    signDisplay: "never",
-                  }).format(Math.abs(transaction.amount))}
-                </TableCell>
-              </TableRow>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={selectedAccount}
+                  onValueChange={setSelectedAccount}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.map((account) => (
+                      <SelectItem key={account} value={account}>
+                        {account}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      {/* Desktop Filters */}
+      <div className="hidden sm:flex sm:flex-col sm:space-y-4">
+        <Input
+          placeholder="Search transactions..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full"
+        />
+        <div className="flex gap-4">
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectedAccount} onValueChange={setSelectedAccount}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Account" />
+            </SelectTrigger>
+            <SelectContent>
+              {accounts.map((account) => (
+                <SelectItem key={account} value={account}>
+                  {account}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Mobile View */}
+      <div className="block sm:hidden">
+        <ScrollArea className="h-[350px]">
+          <div className="space-y-4">
+            {filteredTransactions.map((transaction) => (
+              <div
+                key={transaction.id}
+                className="space-y-2 rounded-lg border p-4"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="font-medium">{transaction.description}</div>
+                  <div
+                    className={`font-semibold ${
+                      transaction.type === "income"
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}
+                  >
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                      signDisplay: "never",
+                    }).format(Math.abs(transaction.amount))}
+                  </div>
+                </div>
+                <div className="text-muted-foreground text-sm">
+                  {new Date(transaction.date).toLocaleDateString()}
+                </div>
+                <div className="text-muted-foreground flex justify-between text-sm">
+                  <div>{transaction.category}</div>
+                  <div>{transaction.account}</div>
+                </div>
+              </div>
             ))}
-          </TableBody>
-        </Table>
-      </ScrollArea>
+          </div>
+        </ScrollArea>
+      </div>
+
+      {/* Desktop View */}
+      <div className="hidden overflow-x-auto sm:block">
+        <ScrollArea className="h-[calc(100vh-400px)] min-h-[400px]">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="whitespace-nowrap">Date</TableHead>
+                <TableHead className="whitespace-nowrap">Description</TableHead>
+                <TableHead className="whitespace-nowrap">Category</TableHead>
+                <TableHead className="whitespace-nowrap">Account</TableHead>
+                <TableHead className="whitespace-nowrap text-right">
+                  Amount
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredTransactions.map((transaction) => (
+                <TableRow key={transaction.id}>
+                  <TableCell className="whitespace-nowrap">
+                    {new Date(transaction.date).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell className="max-w-[200px] truncate">
+                    {transaction.description}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    {transaction.category}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    {transaction.account}
+                  </TableCell>
+                  <TableCell
+                    className={`whitespace-nowrap text-right ${
+                      transaction.type === "income"
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}
+                  >
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                      signDisplay: "never",
+                    }).format(Math.abs(transaction.amount))}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </ScrollArea>
+      </div>
     </div>
   );
 }

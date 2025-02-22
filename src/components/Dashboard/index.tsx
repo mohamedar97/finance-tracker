@@ -50,7 +50,7 @@ const Dashboard = () => {
             <Card>
               <CardHeader>
                 <CardTitle>All Transactions</CardTitle>
-                <CardDescription>
+                <CardDescription className="hidden lg:block">
                   View and manage your transaction history across all accounts.
                 </CardDescription>
               </CardHeader>

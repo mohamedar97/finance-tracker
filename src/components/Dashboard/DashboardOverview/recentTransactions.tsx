@@ -42,29 +42,33 @@ const transactions = [
 
 export function RecentTransactions() {
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Payee</TableHead>
-          <TableHead>Amount</TableHead>
-          <TableHead>Date</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {transactions.map((transaction) => (
-          <TableRow key={transaction.id}>
-            <TableCell>{transaction.payee}</TableCell>
-            <TableCell
-              className={
-                transaction.amount < 0 ? "text-red-500" : "text-green-500"
-              }
-            >
-              ${Math.abs(transaction.amount).toFixed(2)}
-            </TableCell>
-            <TableCell>{transaction.date}</TableCell>
+    <div className="h-[350px] overflow-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[40%]">Payee</TableHead>
+            <TableHead className="w-[30%]">Amount</TableHead>
+            <TableHead className="w-[30%]">Date</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {transactions.map((transaction) => (
+            <TableRow key={transaction.id}>
+              <TableCell className="font-medium">{transaction.payee}</TableCell>
+              <TableCell
+                className={`${
+                  transaction.amount < 0 ? "text-red-500" : "text-green-500"
+                } tabular-nums`}
+              >
+                ${Math.abs(transaction.amount).toFixed(2)}
+              </TableCell>
+              <TableCell className="tabular-nums">
+                {new Date(transaction.date).toLocaleDateString()}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }

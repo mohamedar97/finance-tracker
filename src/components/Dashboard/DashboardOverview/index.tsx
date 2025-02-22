@@ -11,10 +11,10 @@ import { RecentTransactions } from "./recentTransactions";
 
 export function DashboardOverviewTab() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-2 sm:p-4">
       <DashboardMetrics />
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-1 md:col-span-4">
           <CardHeader>
             <CardTitle>Overview</CardTitle>
           </CardHeader>
@@ -22,7 +22,7 @@ export function DashboardOverviewTab() {
             <OverviewChart />
           </CardContent>
         </Card>
-        <Card className="col-span-3">
+        <Card className="col-span-1 md:col-span-3">
           <CardHeader>
             <CardTitle>Recent Transactions</CardTitle>
             <CardDescription>
