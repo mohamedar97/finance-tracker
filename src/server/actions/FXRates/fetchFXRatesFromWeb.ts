@@ -17,14 +17,24 @@ export async function fetchFXRatesFromWeb(): Promise<{
 
   // Fetch both rates in parallel
   const [usdResults, goldResults] = await Promise.all([
-    tvly.search(`USD to EGP exchange rate in Egypt today`, {
+    tvly.search(`سعر الدولار البنك في مصر اليوم اليوم السابع`, {
       num_results: 2,
+      timeRange: "week",
+      includeDomains: [
+        "https://www.youm7.com/",
+        "https://www.masrawy.com/gold",
+      ],
     }),
     tvly.search(` سعر الذهب اليوم في مصر عيار ٢١ اليوم السابع و مصراوي`, {
       num_results: 2,
+      timeRange: "week",
+      includeDomains: [
+        "https://www.youm7.com/",
+        "https://www.masrawy.com/gold",
+      ],
     }),
   ]);
-
+  console.log(usdResults);
   // Process both results in parallel
   const [usdData, goldData] = await Promise.all([
     generateObject({
@@ -35,7 +45,9 @@ export async function fetchFXRatesFromWeb(): Promise<{
       prompt: `Today's date is ${new Date().toLocaleDateString()}
  Extract the USD to EGP exchange rate for today from the following search results: ${JSON.stringify(
    usdResults,
- )}
+ )} 
+  If presented with a range, use the maximum of the range.
+
       `,
     }),
     generateObject({
@@ -47,6 +59,7 @@ export async function fetchFXRatesFromWeb(): Promise<{
  Extract the gold price for one gram of 21 carat gold in Egypt in EGP for today from the following search results: ${JSON.stringify(
    goldResults,
  )}
+ If presented with a range, use the maximum of the range.
       `,
     }),
   ]);
