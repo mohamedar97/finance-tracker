@@ -34,7 +34,6 @@ export async function fetchFXRatesFromWeb(): Promise<{
       ],
     }),
   ]);
-  console.log(usdResults);
   // Process both results in parallel
   const [usdData, goldData] = await Promise.all([
     generateObject({
