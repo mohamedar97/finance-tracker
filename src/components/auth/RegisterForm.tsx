@@ -165,7 +165,7 @@ export default function RegisterForm() {
       const response = await signUp(formData);
 
       if (response.error || !response.data) {
-        toast.error(response.error || "Something went wrong");
+        toast.error(response.error ?? "Something went wrong");
         return;
       }
 
@@ -196,7 +196,7 @@ export default function RegisterForm() {
     setIsLoading(true);
 
     try {
-      signIn("google", {
+      await signIn("google", {
         redirect: false,
       });
     } catch (error) {
@@ -278,7 +278,7 @@ export default function RegisterForm() {
                     inputComponent={PhoneInput}
                     placeholder="Enter phone number"
                     value={field.value}
-                    onChange={(value) => field.onChange(value || "")}
+                    onChange={(value) => field.onChange(value ?? "")}
                     disabled={isLoading}
                   />
                 </FormControl>

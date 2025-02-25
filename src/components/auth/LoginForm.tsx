@@ -74,7 +74,7 @@ export default function LoginForm() {
     setIsLoading(true);
 
     try {
-      signIn("google", {
+      await signIn("google", {
         redirect: false,
       });
     } catch (error) {

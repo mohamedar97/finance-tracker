@@ -27,13 +27,13 @@ export const fetchUserAuthInfo = async ({ email }: { email: string }) => {
       type: "success",
       payload: retrievedCandidate,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("########## getUser ##########"); // Logging error
     console.error(error); // Logging error details
 
     return {
       type: "error",
-      payload: (error.message as string) || "An error has occured",
+      payload: error instanceof Error ? error.message : "An error has occurred",
     };
   }
 };

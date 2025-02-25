@@ -63,7 +63,7 @@ export const signUp = async (formData: FormData) => {
     return {
       data: { email, password },
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("########## signup ##########");
     console.log(error);
     // Return error response for other database errors

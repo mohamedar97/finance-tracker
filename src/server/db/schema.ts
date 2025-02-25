@@ -16,11 +16,11 @@ export const createTable = pgTableCreator((name) => `finance-tracker_${name}`);
 
 // Define enums
 export const currencyEnum = pgEnum("currency_type", ["USD", "EGP", "Gold"]);
-export const accountTypeEnum = pgEnum("account_type", ["savings", "checking"]);
+export const accountTypeEnum = pgEnum("account_type", ["Savings", "Checking"]);
 
 // Users Table
 export const users = createTable("users", {
-  id: uuid("id").primaryKey(),
+  id: uuid("id").defaultRandom().primaryKey(),
   name: varchar("name", { length: 50 }).notNull(),
   email: varchar("email", { length: 100 }).notNull().unique(),
   phoneNumber: varchar("phone_number", { length: 100 }).notNull().unique(),

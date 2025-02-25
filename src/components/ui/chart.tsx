@@ -8,15 +8,25 @@ import { cn } from "@/lib/utils";
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const;
 
-export type ChartConfig = {
-  [k in string]: {
+export type ChartConfig = Record<
+  string,
+  {
     label?: React.ReactNode;
     icon?: React.ComponentType;
   } & (
     | { color?: string; theme?: never }
     | { color?: never; theme: Record<keyof typeof THEMES, string> }
-  );
-};
+  )
+>;
+
+interface ChartPayloadItem {
+  dataKey?: string;
+  name?: string;
+  value?: number | string;
+  payload?: Record<string, unknown>;
+  color?: string;
+  [key: string]: unknown;
+}
 
 type ChartContextProps = {
   config: ChartConfig;
@@ -138,20 +148,24 @@ const ChartTooltipContent = React.forwardRef<
         return null;
       }
 
-      const [item] = payload;
+      const [item] = payload || [];
       if (!item) return null;
 
       const key = `${labelKey ?? item.dataKey ?? item.name ?? "value"}`;
-      const itemConfig = getPayloadConfigFromPayload(config, item, key);
+      const itemConfig = getPayloadConfigFromPayload(
+        config,
+        item as ChartPayloadItem,
+        key,
+      );
       const value =
         !labelKey && typeof label === "string"
-          ? (config[label as keyof typeof config]?.label ?? label)
+          ? (config[label]?.label ?? label)
           : itemConfig?.label;
 
       if (labelFormatter) {
         return (
           <div className={cn("font-medium", labelClassName)}>
-            {labelFormatter(value, payload)}
+            {labelFormatter(value, payload || [])}
           </div>
         );
       }
@@ -189,12 +203,21 @@ const ChartTooltipContent = React.forwardRef<
         <div className="grid gap-1.5">
           {payload.map((item, index) => {
             const key = `${nameKey ?? item.name ?? item.dataKey ?? "value"}`;
-            const itemConfig = getPayloadConfigFromPayload(config, item, key);
-            const indicatorColor = color ?? item.payload.fill ?? item.color;
+            const itemConfig = getPayloadConfigFromPayload(
+              config,
+              item as ChartPayloadItem,
+              key,
+            );
+            const indicatorColor =
+              color ??
+              (item.payload && typeof item.payload === "object"
+                ? ((item.payload as Record<string, unknown>).fill as string)
+                : undefined) ??
+              item.color;
 
             return (
               <div
-                key={item.dataKey}
+                key={item.dataKey as string}
                 className={cn(
                   "flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-muted-foreground",
                   indicator === "dot" && "items-center",
@@ -289,7 +312,11 @@ const ChartLegendContent = React.forwardRef<
       >
         {payload.map((item) => {
           const key = `${nameKey ?? item.dataKey ?? "value"}`;
-          const itemConfig = getPayloadConfigFromPayload(config, item, key);
+          const itemConfig = getPayloadConfigFromPayload(
+            config,
+            item as ChartPayloadItem,
+            key,
+          );
 
           return (
             <div
@@ -321,7 +348,7 @@ ChartLegendContent.displayName = "ChartLegend";
 // Helper to extract item config from a payload.
 function getPayloadConfigFromPayload(
   config: ChartConfig,
-  payload: unknown,
+  payload: ChartPayloadItem,
   key: string,
 ) {
   if (typeof payload !== "object" || payload === null) {
@@ -337,24 +364,17 @@ function getPayloadConfigFromPayload(
 
   let configLabelKey: string = key;
 
-  if (
-    key in payload &&
-    typeof payload[key as keyof typeof payload] === "string"
-  ) {
-    configLabelKey = payload[key as keyof typeof payload] as string;
+  if (key in payload && typeof payload[key] === "string") {
+    configLabelKey = payload[key] as string;
   } else if (
     payloadPayload &&
     key in payloadPayload &&
-    typeof payloadPayload[key as keyof typeof payloadPayload] === "string"
+    typeof (payloadPayload as Record<string, unknown>)[key] === "string"
   ) {
-    configLabelKey = payloadPayload[
-      key as keyof typeof payloadPayload
-    ] as string;
+    configLabelKey = (payloadPayload as Record<string, unknown>)[key] as string;
   }
 
-  return configLabelKey in config
-    ? config[configLabelKey]
-    : config[key as keyof typeof config];
+  return configLabelKey in config ? config[configLabelKey] : config[key];
 }
 
 export {

@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Accounts from "@/components/Accounts";
 import { Account } from "@/lib/types";
 import { getAccounts } from "@/server/actions/accounts/getAccounts";

@@ -28,9 +28,7 @@ import { CurrencyToggle } from "@/components/Header/currencyToggle";
 import { useSession, signOut } from "next-auth/react";
 import { toast } from "sonner";
 
-interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
-
-export function Sidebar({ className }: SidebarProps) {
+export function Sidebar({ className }: React.HTMLAttributes<HTMLDivElement>) {
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);

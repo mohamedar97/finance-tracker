@@ -1,7 +1,7 @@
 export interface AccountFormData {
   name: string;
-  type: string;
+  type: "Savings" | "Checking";
   balance: string;
-  currency: string;
+  currency: "USD" | "EGP" | "Gold";
   isLiability: boolean;
 }

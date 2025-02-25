@@ -19,11 +19,24 @@ declare module "next-auth" {
     } & DefaultSession["user"];
   }
 
+  interface JWT {
+    id: string;
+  }
+
   // interface User {
   //   // ...other properties
   //   // role: UserRole;
   // }
 }
+
+// Type for user authentication data
+type AuthUser = {
+  id: string;
+  email: string;
+  salt: string;
+  hashedPassword: string;
+  credentialsLogin?: boolean;
+};
 
 /**
  * Options for NextAuth.js used to configure adapters, providers, callbacks, etc.
@@ -56,7 +69,7 @@ export const authConfig = {
           if (typeof response.payload === "string") {
             return null;
           }
-          const user = response.payload as any;
+          const user = response.payload as AuthUser;
           // Hash the password using user's salt and compare with stored hashed password
           const encoder = new TextEncoder();
           const saltedPassword = encoder.encode(password + user.salt);
@@ -80,8 +93,8 @@ export const authConfig = {
     }),
     // Google OAuth provider for authentication
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
 

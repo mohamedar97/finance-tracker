@@ -31,7 +31,7 @@ export async function createAccount(data: CreateAccountInput) {
         name: data.name,
         currency: data.currency as "USD" | "EGP" | "Gold",
         balance: data.balance,
-        type: data.type as "savings" | "checking",
+        type: data.type as "Savings" | "Checking",
         isLiability: data.isLiability,
       })
       .returning();
