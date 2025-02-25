@@ -1,5 +1,5 @@
 import { Sidebar } from "@/components/Header/sidebar";
-import { CurrencyToggle } from "@/components/currencyToggle";
+import { CurrencyToggle } from "@/components/Header/currencyToggle";
 import { Suspense } from "react";
 import { cache } from "react";
 import { Loader2 } from "lucide-react";

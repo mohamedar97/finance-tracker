@@ -28,7 +28,7 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 0.5rem
+    --radius: 0.5rem;
   }
   .dark {
     --background: 240 10% 3.9%;
@@ -54,7 +54,7 @@
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%
+    --chart-5: 340 75% 55%;
   }
 }
 
@@ -64,5 +64,53 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Loading dots animations */
+@keyframes loadingDot1 {
+  0%,
+  20% {
+    opacity: 0;
+  }
+  40%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes loadingDot2 {
+  0%,
+  40% {
+    opacity: 0;
+  }
+  60%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes loadingDot3 {
+  0%,
+  60% {
+    opacity: 0;
+  }
+  80%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@layer utilities {
+  .animate-dot-1 {
+    animation: loadingDot1 1.4s infinite;
+  }
+
+  .animate-dot-2 {
+    animation: loadingDot2 1.4s infinite;
+  }
+
+  .animate-dot-3 {
+    animation: loadingDot3 1.4s infinite;
   }
 }

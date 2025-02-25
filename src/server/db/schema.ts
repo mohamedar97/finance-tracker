@@ -9,9 +9,14 @@ import {
   boolean,
   pgTableCreator,
   uuid,
+  pgEnum,
 } from "drizzle-orm/pg-core";
 
 export const createTable = pgTableCreator((name) => `finance-tracker_${name}`);
+
+// Define enums
+export const currencyEnum = pgEnum("currency_type", ["USD", "EGP", "Gold"]);
+export const accountTypeEnum = pgEnum("account_type", ["savings", "checking"]);
 
 // Users Table
 export const users = createTable("users", {
@@ -29,9 +34,9 @@ export const accounts = createTable("accounts", {
     .references(() => users.user_id)
     .notNull(),
   name: varchar("name", { length: 50 }).notNull(),
-  currency: varchar("currency", { length: 20 }).notNull(), // e.g., 'USD', 'EGP', 'Gold Gram'
+  currency: currencyEnum("currency").notNull(), // Using enum instead of varchar
   balance: decimal("balance", { precision: 15, scale: 2 }).notNull(), // e.g., 1000.00
-  type: varchar("type", { length: 20 }).notNull(), // e.g., 'savings', 'checking', 'cash', 'gold', 'credit_card', 'loan', 'mortgage'
+  type: accountTypeEnum("type").notNull(), // Using enum instead of varchar
   isLiability: boolean("is_liability").notNull().default(false), // true for debts/liabilities, false for assets
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
