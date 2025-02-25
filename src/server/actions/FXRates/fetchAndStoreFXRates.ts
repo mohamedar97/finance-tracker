@@ -20,10 +20,10 @@ export async function fetchAndStoreFXRates({
     // If we have recent rates, return them
     if (existingRates && !forceRefresh) {
       return {
-        usdRate: existingRates.usd_rate,
-        goldRate: existingRates.gold_g_rate,
+        usdRate: existingRates.usdRate,
+        goldRate: existingRates.goldGrate,
         source: "database",
-        timestamp: existingRates.created_at,
+        timestamp: existingRates.createdAt,
       };
     }
 
@@ -33,12 +33,10 @@ export async function fetchAndStoreFXRates({
     // Store the new rates in the database
     const insertResult = await db
       .insert(currencyRates)
-      .values([
-        {
-          usd_rate: usdRate.toString(),
-          gold_g_rate: goldRate.toString(),
-        },
-      ])
+      .values({
+        usdRate: usdRate.toString(),
+        goldGrate: goldRate.toString(),
+      })
       .returning();
 
     const newRate = insertResult[0];
@@ -48,10 +46,10 @@ export async function fetchAndStoreFXRates({
     }
     // Return the newly fetched and stored rates
     return {
-      usdRate: newRate.usd_rate,
-      goldRate: newRate.gold_g_rate,
+      usdRate: newRate.usdRate,
+      goldRate: newRate.goldGrate,
       source: "web",
-      timestamp: newRate.created_at,
+      timestamp: newRate.createdAt,
     };
   } catch (error) {
     console.error("Error fetching and storing FX rates:", error);

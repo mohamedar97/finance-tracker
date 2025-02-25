@@ -17,8 +17,8 @@ export async function fetchFXRatesFromDB() {
 
     // Query the database for the latest FX rates within the last 24 hours
     const latestRates = await db.query.currencyRates.findFirst({
-      where: and(gte(currencyRates.created_at, twentyFourHoursAgo)),
-      orderBy: [desc(currencyRates.created_at)],
+      where: and(gte(currencyRates.createdAt, twentyFourHoursAgo)),
+      orderBy: [desc(currencyRates.createdAt)],
     });
 
     // Return the rates or null if none found

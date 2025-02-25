@@ -4,6 +4,7 @@ import { db } from "@/server/db";
 import { accounts } from "@/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import type { Account } from "@/lib/types";
+import { auth } from "@/server/auth";
 
 /**
  * Fetches all accounts for the current user
@@ -13,8 +14,14 @@ export async function getAccounts() {
   try {
     // Get the current user ID (this would typically come from an auth session)
     // For now, we'll use a placeholder - this should be replaced with actual auth logic
-    const userId = 1; // Placeholder - replace with actual user ID from auth
+    const session = await auth();
 
+    // Get the current user ID (this would typically come from an auth session)
+    // For now, we'll use a placeholder - this should be replaced with actual auth logic
+    const userId = session?.user?.id; // Placeholder - replace with actual user ID from auth
+    if (!userId) {
+      throw new Error("User not authenticated");
+    }
     // Query all accounts for the user
     const userAccounts = await db
       .select()
@@ -45,8 +52,14 @@ export async function getAccountById(accountId: string) {
   try {
     // Get the current user ID (this would typically come from an auth session)
     // For now, we'll use a placeholder - this should be replaced with actual auth logic
-    const userId = 1; // Placeholder - replace with actual user ID from auth
+    const session = await auth();
 
+    // Get the current user ID (this would typically come from an auth session)
+    // For now, we'll use a placeholder - this should be replaced with actual auth logic
+    const userId = session?.user?.id; // Placeholder - replace with actual user ID from auth
+    if (!userId) {
+      throw new Error("User not authenticated");
+    }
     // Query the specific account, ensuring it belongs to the current user
     const [account] = await db
       .select()

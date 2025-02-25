@@ -3,7 +3,8 @@
 import { db } from "@/server/db";
 import { accounts } from "@/server/db/schema";
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import { auth } from "@/server/auth";
 
 interface UpdateAccountInput {
   accountId: string;
@@ -17,9 +18,9 @@ interface UpdateAccountInput {
 // Define a type for the update data that matches the possible fields
 type AccountUpdateData = {
   name?: string;
-  type?: string;
+  type?: "savings" | "checking";
   balance?: string;
-  currency?: string;
+  currency?: "USD" | "EGP" | "Gold";
   isLiability?: boolean;
 };
 
@@ -27,16 +28,24 @@ export async function updateAccount(data: UpdateAccountInput) {
   try {
     // Get the current user ID (this would typically come from an auth session)
     // For now, we'll use a placeholder - this should be replaced with actual auth logic
-    // const userId = 1; // Placeholder - replace with actual user ID from auth
+    const session = await auth();
 
+    // Get the current user ID (this would typically come from an auth session)
+    // For now, we'll use a placeholder - this should be replaced with actual auth logic
+    const userId = session?.user?.id; // Placeholder - replace with actual user ID from auth
+    if (!userId) {
+      throw new Error("User not authenticated");
+    }
     // Prepare the update data
     const updateData: AccountUpdateData = {};
 
     // Only include fields that are provided
     if (data.name !== undefined) updateData.name = data.name;
-    if (data.type !== undefined) updateData.type = data.type;
+    if (data.type !== undefined)
+      updateData.type = data.type as "savings" | "checking";
     if (data.balance !== undefined) updateData.balance = data.balance;
-    if (data.currency !== undefined) updateData.currency = data.currency;
+    if (data.currency !== undefined)
+      updateData.currency = data.currency as "USD" | "EGP" | "Gold";
     if (data.isLiability !== undefined)
       updateData.isLiability = data.isLiability;
 
@@ -44,11 +53,7 @@ export async function updateAccount(data: UpdateAccountInput) {
     const result = await db
       .update(accounts)
       .set(updateData)
-      .where(
-        eq(accounts.id, data.accountId),
-        // In a real app, you would also check that the account belongs to the current user
-        // .and(eq(accounts.user_id, userId))
-      )
+      .where(and(eq(accounts.id, data.accountId), eq(accounts.userId, userId)))
       .returning({ account_id: accounts.id });
 
     // Check if we have a valid account ID

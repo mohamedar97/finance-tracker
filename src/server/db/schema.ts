@@ -20,10 +20,11 @@ export const accountTypeEnum = pgEnum("account_type", ["savings", "checking"]);
 
 // Users Table
 export const users = createTable("users", {
-  user_id: serial("user_id").primaryKey(),
-  username: varchar("username", { length: 50 }).notNull().unique(),
+  id: uuid("id").primaryKey(),
+  name: varchar("name", { length: 50 }).notNull(),
   email: varchar("email", { length: 100 }).notNull().unique(),
-  password_hash: varchar("password_hash", { length: 255 }).notNull(),
+  phoneNumber: varchar("phone_number", { length: 100 }).notNull().unique(),
+  hashedPassword: varchar("hashed_password", { length: 255 }).notNull(),
   salt: varchar("salt", { length: 255 }).notNull(),
   created_at: timestamp("created_at").defaultNow(),
 });
@@ -31,8 +32,8 @@ export const users = createTable("users", {
 // Accounts Table
 export const accounts = createTable("accounts", {
   id: uuid("id").defaultRandom().primaryKey(),
-  userId: integer("user_id")
-    .references(() => users.user_id)
+  userId: uuid("user_id")
+    .references(() => users.id)
     .notNull(),
   name: varchar("name", { length: 50 }).notNull(),
   currency: currencyEnum("currency").notNull(), // Using enum instead of varchar
@@ -56,75 +57,75 @@ export const transactions = createTable("transactions", {
 
 // Currency Rates Table
 export const currencyRates = createTable("currency_rates", {
-  rate_id: serial("rate_id").primaryKey(),
-  usd_rate: decimal("usd_rate", { precision: 15, scale: 6 }).notNull(), // EGP per 1 USD
-  gold_g_rate: decimal("gold_g_rate", { precision: 15, scale: 6 }).notNull(), // EGP per 1g of 21 carat gold
-  created_at: timestamp("created_at").defaultNow().notNull(),
+  rateId: serial("rate_id").primaryKey(),
+  usdRate: decimal("usd_rate", { precision: 15, scale: 6 }).notNull(), // EGP per 1 USD
+  goldGrate: decimal("gold_g_rate", { precision: 15, scale: 6 }).notNull(), // EGP per 1g of 21 carat gold
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Snapshots Table
 export const snapshots = createTable("snapshots", {
-  snapshot_id: serial("snapshot_id").primaryKey(),
-  user_id: integer("user_id")
-    .references(() => users.user_id)
+  snapshotId: serial("snapshot_id").primaryKey(),
+  userId: uuid("user_id")
+    .references(() => users.id)
     .notNull(),
-  snapshot_date: date("snapshot_date").notNull(),
-  currency_rate_id: integer("currency_rate_id").references(
-    () => currencyRates.rate_id,
+  snapshotDate: date("snapshot_date").notNull(),
+  currencyRateId: integer("currency_rate_id").references(
+    () => currencyRates.rateId,
   ),
-  created_at: timestamp("created_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Snapshot_Details Table (Additional Table)
 export const snapshotDetails = createTable("snapshot_details", {
-  snapshot_detail_id: serial("snapshot_detail_id").primaryKey(),
-  snapshot_id: integer("snapshot_id")
-    .references(() => snapshots.snapshot_id, { onDelete: "cascade" })
+  snapshotDetailId: serial("snapshot_detail_id").primaryKey(),
+  snapshotId: integer("snapshot_id")
+    .references(() => snapshots.snapshotId, { onDelete: "cascade" })
     .notNull(),
-  account_id: uuid("account_id")
+  accountId: uuid("account_id")
     .references(() => accounts.id)
     .notNull(),
-  recorded_at: timestamp("recorded_at").defaultNow(),
+  recordedAt: timestamp("recorded_at").defaultNow(),
 });
 
 // BankStatements Table (Optional)
 export const bankStatements = createTable("bank_statements", {
   statement_id: serial("statement_id").primaryKey(),
-  user_id: integer("user_id")
-    .references(() => users.user_id)
+  userId: uuid("user_id")
+    .references(() => users.id)
     .notNull(),
-  file_name: text("file_name").notNull(),
-  file_path: text("file_path").notNull(),
-  uploaded_at: timestamp("uploaded_at").defaultNow(),
+  fileName: text("file_name").notNull(),
+  filePath: text("file_path").notNull(),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
 });
 
 // Installment Plans Table
 export const installmentPlans = createTable("installment_plans", {
-  installment_plan_id: serial("installment_plan_id").primaryKey(),
-  user_id: integer("user_id")
-    .references(() => users.user_id)
+  installmentPlanId: serial("installment_plan_id").primaryKey(),
+  userId: uuid("user_id")
+    .references(() => users.id)
     .notNull(),
-  account_id: uuid("account_id")
+  accountId: uuid("account_id")
     .references(() => accounts.id)
     .notNull(),
   description: text("description"), // e.g., "Laptop Purchase Installments"
-  number_of_installments: integer("number_of_installments").notNull(),
-  interest_rate: decimal("interest_rate", { precision: 5, scale: 2 }).default(
+  numberOfInstallments: integer("number_of_installments").notNull(),
+  interestRate: decimal("interest_rate", { precision: 5, scale: 2 }).default(
     "0",
   ), // Percentage, if applicable
-  start_date: date("start_date").notNull(), // Date when installments begin
-  created_at: timestamp("created_at").defaultNow(),
+  startDate: date("start_date").notNull(), // Date when installments begin
+  createdAt: timestamp("created_at").defaultNow(),
   // Original amounts are now stored in the balanesWithCurrencyConversions table with entity_type='installment_plan'
 });
 
 // Installment Payments Table
 export const installmentPayments = createTable("installment_payments", {
-  installment_payment_id: serial("installment_payment_id").primaryKey(),
-  installment_plan_id: integer("installment_plan_id")
-    .references(() => installmentPlans.installment_plan_id)
+  installmentPaymentId: serial("installment_payment_id").primaryKey(),
+  installmentPlanId: integer("installment_plan_id")
+    .references(() => installmentPlans.installmentPlanId)
     .notNull(),
-  due_date: date("due_date").notNull(),
-  payment_date: date("payment_date"), // Nullable; set once the payment is made
+  dueDate: date("due_date").notNull(),
+  paymentDate: date("payment_date"), // Nullable; set once the payment is made
   status: varchar("status", { length: 20 }).default("pending"), // e.g., pending, paid, late
-  created_at: timestamp("created_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
 });

@@ -85,3 +85,7 @@ export function formatCurrency(
     return `${absValue.toFixed(2)} ${currencyCode}`;
   }
 }
+export const getStringFromBuffer = (buffer: ArrayBuffer) =>
+  Array.from(new Uint8Array(buffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");

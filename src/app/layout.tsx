@@ -5,6 +5,7 @@ import "@/styles/globals.css";
 import { Header } from "@/components/Header/index";
 import { Toaster } from "sonner";
 import { FXRatesProvider } from "@/components/Header/FXRatesProvider";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,15 +22,17 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <FXRatesProvider>
-          <div className="relative flex min-h-screen flex-col">
-            <Header />
-            <div className="flex flex-1">
-              <main className="flex-1 overflow-y-auto">{children}</main>
-              <Toaster />
+        <AuthProvider>
+          <FXRatesProvider>
+            <div className="relative flex min-h-screen flex-col">
+              <Header />
+              <div className="flex flex-1">
+                <main className="flex-1 overflow-y-auto">{children}</main>
+                <Toaster />
+              </div>
             </div>
-          </div>
-        </FXRatesProvider>
+          </FXRatesProvider>
+        </AuthProvider>
       </body>
     </html>
   );
