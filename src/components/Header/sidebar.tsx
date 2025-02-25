@@ -23,18 +23,9 @@ import {
 } from "@/components/ui/sheet";
 import { CurrencyToggle } from "@/components/Header/currencyToggle";
 
-interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
-  initialUsdRate: number;
-  initialGoldRate: number;
-  lastUpdated: Date;
-}
+interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
-export function Sidebar({
-  className,
-  initialUsdRate,
-  initialGoldRate,
-  lastUpdated,
-}: SidebarProps) {
+export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -46,12 +37,7 @@ export function Sidebar({
     <div className={cn("pb-12", className)}>
       <div className="space-y-4 py-4">
         <div className="px-3 py-2">
-          <CurrencyToggle
-            initialUsdRate={initialUsdRate}
-            initialGoldRate={initialGoldRate}
-            lastUpdated={lastUpdated}
-            compact={true}
-          />
+          <CurrencyToggle compact={true} />
         </div>
         <div className="px-3 py-2">
           <div className="space-y-1">

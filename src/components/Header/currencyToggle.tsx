@@ -22,11 +22,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { type Currency } from "@/lib/types";
 import { currencyEnum } from "@/server/db/schema";
 import Image from "next/image";
-import { fetchAndStoreFXRates } from "@/server/actions/FXRates/fetchAndStoreFXRates";
+import { useCurrency } from "@/lib/contexts/CurrencyContext";
 
 // Gold Bars image component
 const GoldBarsImage = () => (
@@ -68,59 +68,21 @@ const currencies: CurrencyOption[] = currencyEnum.enumValues.map((value) => ({
   icon: getCurrencyIcon(value as Currency),
 }));
 
-// Format date function
-const formatDateTime = (date: Date): string => {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-};
-
 interface CurrencyToggleProps {
-  initialUsdRate: number;
-  initialGoldRate: number;
-  lastUpdated: Date;
   compact?: boolean;
 }
 
-export function CurrencyToggle({
-  initialUsdRate,
-  initialGoldRate,
-  lastUpdated,
-  compact = false,
-}: CurrencyToggleProps) {
+export function CurrencyToggle({ compact = false }: CurrencyToggleProps) {
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState<Currency>("USD");
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [usdRate, setUsdRate] = useState<number>(initialUsdRate);
-  const [goldRate, setGoldRate] = useState<number>(initialGoldRate);
-  const [timestamp, setTimestamp] = useState<string>(
-    formatDateTime(lastUpdated),
-  );
-
-  useEffect(() => {
-    if (lastUpdated) {
-      setTimestamp(formatDateTime(lastUpdated));
-    }
-  }, [lastUpdated]);
-
-  const handleRefresh = async () => {
-    if (!isRefreshing) {
-      try {
-        setIsRefreshing(true);
-        const { usdRate, goldRate, timestamp } = await fetchAndStoreFXRates({
-          forceRefresh: true,
-        });
-        setUsdRate(Number(usdRate));
-        setGoldRate(Number(goldRate));
-        setTimestamp(formatDateTime(timestamp));
-      } finally {
-        setIsRefreshing(false);
-      }
-    }
-  };
+  const {
+    usdRate,
+    goldRate,
+    formattedTimestamp,
+    selectedCurrency,
+    setSelectedCurrency,
+    refreshRates,
+    isRefreshing,
+  } = useCurrency();
 
   // Compact version for sidebar
   if (compact) {
@@ -138,12 +100,15 @@ export function CurrencyToggle({
               className="w-full justify-between border-dashed transition-colors hover:border-primary"
             >
               <div className="flex items-center gap-2">
-                {value &&
-                  currencies.find((currency) => currency.value === value)?.icon}
+                {selectedCurrency &&
+                  currencies.find(
+                    (currency) => currency.value === selectedCurrency,
+                  )?.icon}
                 <span>
-                  {value
-                    ? currencies.find((currency) => currency.value === value)
-                        ?.label
+                  {selectedCurrency
+                    ? currencies.find(
+                        (currency) => currency.value === selectedCurrency,
+                      )?.label
                     : "Currency"}
                 </span>
               </div>
@@ -158,17 +123,17 @@ export function CurrencyToggle({
                   variant="ghost"
                   className={cn(
                     "justify-start",
-                    value === currency.value && "bg-muted",
+                    selectedCurrency === currency.value && "bg-muted",
                   )}
                   onClick={() => {
-                    setValue(currency.value);
+                    setSelectedCurrency(currency.value);
                     setOpen(false);
                   }}
                 >
                   <div className="flex items-center gap-2">
                     {currency.icon}
                     <span>{currency.label}</span>
-                    {value === currency.value && (
+                    {selectedCurrency === currency.value && (
                       <Check className="ml-auto h-4 w-4" />
                     )}
                   </div>
@@ -219,13 +184,15 @@ export function CurrencyToggle({
         <div className="mt-2 flex items-center justify-between rounded-md bg-muted/50 px-2 py-1">
           <div className="flex items-center gap-1">
             <Clock className="h-3 w-3 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">{timestamp}</span>
+            <span className="text-xs text-muted-foreground">
+              {formattedTimestamp}
+            </span>
           </div>
           <Button
             variant="ghost"
             size="icon"
             className="h-6 w-6"
-            onClick={handleRefresh}
+            onClick={refreshRates}
             disabled={isRefreshing}
           >
             <RefreshCw
@@ -284,11 +251,11 @@ export function CurrencyToggle({
             <TooltipTrigger asChild>
               <div className="flex cursor-help items-center gap-1 rounded-md bg-muted px-3 py-1 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
-                <span>{timestamp}</span>
+                <span>{formattedTimestamp}</span>
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Last updated at {timestamp}</p>
+              <p>Last updated at {formattedTimestamp}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -298,7 +265,7 @@ export function CurrencyToggle({
             variant="ghost"
             size="icon"
             className="h-8 w-8"
-            onClick={handleRefresh}
+            onClick={refreshRates}
             disabled={isRefreshing}
           >
             <RefreshCw
@@ -319,12 +286,15 @@ export function CurrencyToggle({
             className="w-[120px] justify-between border-dashed transition-colors hover:border-primary"
           >
             <div className="flex items-center gap-2">
-              {value &&
-                currencies.find((currency) => currency.value === value)?.icon}
+              {selectedCurrency &&
+                currencies.find(
+                  (currency) => currency.value === selectedCurrency,
+                )?.icon}
               <span>
-                {value
-                  ? currencies.find((currency) => currency.value === value)
-                      ?.label
+                {selectedCurrency
+                  ? currencies.find(
+                      (currency) => currency.value === selectedCurrency,
+                    )?.label
                   : "Currency"}
               </span>
             </div>
@@ -339,17 +309,17 @@ export function CurrencyToggle({
                 variant="ghost"
                 className={cn(
                   "justify-start",
-                  value === currency.value && "bg-muted",
+                  selectedCurrency === currency.value && "bg-muted",
                 )}
                 onClick={() => {
-                  setValue(currency.value);
+                  setSelectedCurrency(currency.value);
                   setOpen(false);
                 }}
               >
                 <div className="flex items-center gap-2">
                   {currency.icon}
                   <span>{currency.label}</span>
-                  {value === currency.value && (
+                  {selectedCurrency === currency.value && (
                     <Check className="ml-auto h-4 w-4" />
                   )}
                 </div>
