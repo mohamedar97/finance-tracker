@@ -33,14 +33,14 @@ function LoadingDots() {
 // Cache the data fetching functions to avoid refetching
 const fetchUSDToEGPCached = cache(async () => {
   const { fetchUSDToEGP } = await import(
-    "@/server/actions/FXRates/fetchUSDToEGP"
+    "@/server/actions/FXRates/fetchUSDToEGPFromWeb"
   );
   return fetchUSDToEGP();
 });
 
 const fetchGoldToEGPCached = cache(async () => {
   const { fetchGoldToEGP } = await import(
-    "@/server/actions/FXRates/fetchGoldToEGP"
+    "@/server/actions/FXRates/fetchGoldToEGPFromWeb"
   );
   return fetchGoldToEGP();
 });

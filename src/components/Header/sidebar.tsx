@@ -21,8 +21,20 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { CurrencyToggle } from "@/components/Header/currencyToggle";
 
-export function Sidebar({ className }: React.HTMLAttributes<HTMLDivElement>) {
+interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
+  initialUsdRate: number;
+  initialGoldRate: number;
+  lastUpdated: Date;
+}
+
+export function Sidebar({
+  className,
+  initialUsdRate,
+  initialGoldRate,
+  lastUpdated,
+}: SidebarProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -33,6 +45,14 @@ export function Sidebar({ className }: React.HTMLAttributes<HTMLDivElement>) {
   const SidebarContent = () => (
     <div className={cn("pb-12", className)}>
       <div className="space-y-4 py-4">
+        <div className="px-3 py-2">
+          <CurrencyToggle
+            initialUsdRate={initialUsdRate}
+            initialGoldRate={initialGoldRate}
+            lastUpdated={lastUpdated}
+            compact={true}
+          />
+        </div>
         <div className="px-3 py-2">
           <div className="space-y-1">
             <Link href="/" onClick={handleLinkClick}>

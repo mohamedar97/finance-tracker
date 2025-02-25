@@ -1,7 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronsUpDown, DollarSign, Banknote } from "lucide-react";
+import {
+  Check,
+  ChevronsUpDown,
+  DollarSign,
+  Banknote,
+  RefreshCw,
+  Clock,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,10 +22,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { type Currency } from "@/lib/types";
 import { currencyEnum } from "@/server/db/schema";
 import Image from "next/image";
+import { fetchAndStoreFXRates } from "@/server/actions/FXRates/fetchAndStoreFXRates";
 
 // Gold Bars image component
 const GoldBarsImage = () => (
@@ -60,15 +68,177 @@ const currencies: CurrencyOption[] = currencyEnum.enumValues.map((value) => ({
   icon: getCurrencyIcon(value as Currency),
 }));
 
+// Format date function
+const formatDateTime = (date: Date): string => {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+};
+
 interface CurrencyToggleProps {
-  usdRate?: number;
-  goldRate?: number;
+  initialUsdRate: number;
+  initialGoldRate: number;
+  lastUpdated: Date;
+  compact?: boolean;
 }
 
-export function CurrencyToggle({ usdRate, goldRate }: CurrencyToggleProps) {
+export function CurrencyToggle({
+  initialUsdRate,
+  initialGoldRate,
+  lastUpdated,
+  compact = false,
+}: CurrencyToggleProps) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState<Currency>("USD");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [usdRate, setUsdRate] = useState<number>(initialUsdRate);
+  const [goldRate, setGoldRate] = useState<number>(initialGoldRate);
+  const [timestamp, setTimestamp] = useState<string>(
+    formatDateTime(lastUpdated),
+  );
 
+  useEffect(() => {
+    if (lastUpdated) {
+      setTimestamp(formatDateTime(lastUpdated));
+    }
+  }, [lastUpdated]);
+
+  const handleRefresh = async () => {
+    if (!isRefreshing) {
+      try {
+        setIsRefreshing(true);
+        const { usdRate, goldRate, timestamp } = await fetchAndStoreFXRates({
+          forceRefresh: true,
+        });
+        setUsdRate(Number(usdRate));
+        setGoldRate(Number(goldRate));
+        setTimestamp(formatDateTime(timestamp));
+      } finally {
+        setIsRefreshing(false);
+      }
+    }
+  };
+
+  // Compact version for sidebar
+  if (compact) {
+    return (
+      <div className="space-y-2 rounded-lg bg-muted/30 p-2">
+        <h2 className="px-1 text-sm font-semibold tracking-tight">Currency</h2>
+
+        {/* Currency selector */}
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              className="w-full justify-between border-dashed transition-colors hover:border-primary"
+            >
+              <div className="flex items-center gap-2">
+                {value &&
+                  currencies.find((currency) => currency.value === value)?.icon}
+                <span>
+                  {value
+                    ? currencies.find((currency) => currency.value === value)
+                        ?.label
+                    : "Currency"}
+                </span>
+              </div>
+              <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[120px] p-1">
+            <div className="flex flex-col gap-1">
+              {currencies.map((currency) => (
+                <Button
+                  key={currency.value}
+                  variant="ghost"
+                  className={cn(
+                    "justify-start",
+                    value === currency.value && "bg-muted",
+                  )}
+                  onClick={() => {
+                    setValue(currency.value);
+                    setOpen(false);
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    {currency.icon}
+                    <span>{currency.label}</span>
+                    {value === currency.value && (
+                      <Check className="ml-auto h-4 w-4" />
+                    )}
+                  </div>
+                </Button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* FX Rates with icons */}
+        <div className="mt-2 space-y-1.5">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex cursor-help items-center justify-between rounded-md bg-muted px-2 py-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <DollarSign className="h-3.5 w-3.5 text-green-600" />
+                    <span className="text-xs font-medium">USD</span>
+                  </div>
+                  <span className="text-xs font-medium">{usdRate} EGP</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>The Bank Price of 1 USD in EGP</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex cursor-help items-center justify-between rounded-md bg-muted px-2 py-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <GoldBarsImage />
+                    <span className="text-xs font-medium">Gold</span>
+                  </div>
+                  <span className="text-xs font-medium">{goldRate} EGP</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>The Price of 1 Gram of 21 Carat Gold in EGP</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+
+        {/* Update time and refresh button */}
+        <div className="mt-2 flex items-center justify-between rounded-md bg-muted/50 px-2 py-1">
+          <div className="flex items-center gap-1">
+            <Clock className="h-3 w-3 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">{timestamp}</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            <RefreshCw
+              className={cn("h-3 w-3", isRefreshing && "animate-spin")}
+            />
+            <span className="sr-only">Refresh rates</span>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Original full version
   return (
     <div className="flex flex-col items-center gap-4 rounded-lg bg-muted/30 p-2 sm:flex-row">
       {/* Rate indicators with improved styling */}
@@ -104,6 +274,38 @@ export function CurrencyToggle({ usdRate, goldRate }: CurrencyToggleProps) {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+        )}
+      </div>
+
+      {/* Timestamp and refresh button */}
+      <div className="flex items-center gap-2">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex cursor-help items-center gap-1 rounded-md bg-muted px-3 py-1 text-xs text-muted-foreground">
+                <Clock className="h-3 w-3" />
+                <span>{timestamp}</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Last updated at {timestamp}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        {true && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            <RefreshCw
+              className={cn("h-4 w-4", isRefreshing && "animate-spin")}
+            />
+            <span className="sr-only">Refresh rates</span>
+          </Button>
         )}
       </div>
 

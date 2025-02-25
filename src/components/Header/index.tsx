@@ -1,8 +1,8 @@
 import { Sidebar } from "@/components/Header/sidebar";
 import { CurrencyToggle } from "@/components/Header/currencyToggle";
 import { Suspense } from "react";
-import { cache } from "react";
 import { Loader2 } from "lucide-react";
+import { fetchAndStoreFXRates } from "@/server/actions/FXRates/fetchAndStoreFXRates";
 
 // Enhanced loading fallback component with animated loading indicator
 function RatesLoading() {
@@ -30,44 +30,37 @@ function LoadingDots() {
   );
 }
 
-// Cache the data fetching functions to avoid refetching
-const fetchUSDToEGPCached = cache(async () => {
-  const { fetchUSDToEGP } = await import(
-    "@/server/actions/FXRates/fetchUSDToEGP"
+// Component that renders both sidebar and currency toggle with the fetched data
+async function HeaderContent() {
+  const { usdRate, goldRate, timestamp } = await fetchAndStoreFXRates();
+
+  return (
+    <>
+      <div className="flex items-center">
+        <Sidebar
+          initialUsdRate={Number(usdRate)}
+          initialGoldRate={Number(goldRate)}
+          lastUpdated={timestamp}
+        />
+      </div>
+      <div className="hidden items-center space-x-4 md:flex">
+        <CurrencyToggle
+          initialUsdRate={Number(usdRate)}
+          initialGoldRate={Number(goldRate)}
+          lastUpdated={timestamp}
+        />
+      </div>
+    </>
   );
-  return fetchUSDToEGP();
-});
-
-const fetchGoldToEGPCached = cache(async () => {
-  const { fetchGoldToEGP } = await import(
-    "@/server/actions/FXRates/fetchGoldToEGP"
-  );
-  return fetchGoldToEGP();
-});
-
-// Separate component that handles its own data fetching
-async function CurrencyRates() {
-  // Fetch both rates in parallel
-  const [usdRate, goldRate] = await Promise.all([
-    fetchUSDToEGPCached(),
-    fetchGoldToEGPCached(),
-  ]);
-
-  return <CurrencyToggle usdRate={usdRate} goldRate={goldRate} />;
 }
 
 export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 w-full items-center justify-between px-4 md:px-6">
-        <div className="flex items-center">
-          <Sidebar />
-        </div>
-        <div className="flex items-center space-x-4">
-          <Suspense fallback={<RatesLoading />}>
-            <CurrencyRates />
-          </Suspense>
-        </div>
+        <Suspense fallback={<RatesLoading />}>
+          <HeaderContent />
+        </Suspense>
       </div>
     </header>
   );

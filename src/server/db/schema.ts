@@ -24,6 +24,7 @@ export const users = createTable("users", {
   username: varchar("username", { length: 50 }).notNull().unique(),
   email: varchar("email", { length: 100 }).notNull().unique(),
   password_hash: varchar("password_hash", { length: 255 }).notNull(),
+  salt: varchar("salt", { length: 255 }).notNull(),
   created_at: timestamp("created_at").defaultNow(),
 });
 
@@ -44,13 +45,21 @@ export const accounts = createTable("accounts", {
 // Transactions Table
 export const transactions = createTable("transactions", {
   transaction_id: serial("transaction_id").primaryKey(),
-  account_id: integer("account_id")
+  account_id: uuid("account_id")
     .references(() => accounts.id)
     .notNull(),
   transaction_date: date("transaction_date").notNull(),
   description: text("description"),
   category: varchar("category", { length: 50 }),
   created_at: timestamp("created_at").defaultNow(),
+});
+
+// Currency Rates Table
+export const currencyRates = createTable("currency_rates", {
+  rate_id: serial("rate_id").primaryKey(),
+  usd_rate: decimal("usd_rate", { precision: 15, scale: 6 }).notNull(), // EGP per 1 USD
+  gold_g_rate: decimal("gold_g_rate", { precision: 15, scale: 6 }).notNull(), // EGP per 1g of 21 carat gold
+  created_at: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Snapshots Table
@@ -60,21 +69,24 @@ export const snapshots = createTable("snapshots", {
     .references(() => users.user_id)
     .notNull(),
   snapshot_date: date("snapshot_date").notNull(),
-  usd_rate: decimal("usd_rate", { precision: 15, scale: 6 }), // EGP per 1 USD
-  gold_g_rate: decimal("gold_g_rate", { precision: 15, scale: 6 }), // EGP per 1g of 21 carat gold
+  currency_rate_id: integer("currency_rate_id").references(
+    () => currencyRates.rate_id,
+  ),
   created_at: timestamp("created_at").defaultNow(),
 });
+
 // Snapshot_Details Table (Additional Table)
 export const snapshotDetails = createTable("snapshot_details", {
   snapshot_detail_id: serial("snapshot_detail_id").primaryKey(),
   snapshot_id: integer("snapshot_id")
     .references(() => snapshots.snapshot_id, { onDelete: "cascade" })
     .notNull(),
-  account_id: integer("account_id")
+  account_id: uuid("account_id")
     .references(() => accounts.id)
     .notNull(),
   recorded_at: timestamp("recorded_at").defaultNow(),
 });
+
 // BankStatements Table (Optional)
 export const bankStatements = createTable("bank_statements", {
   statement_id: serial("statement_id").primaryKey(),
@@ -92,7 +104,7 @@ export const installmentPlans = createTable("installment_plans", {
   user_id: integer("user_id")
     .references(() => users.user_id)
     .notNull(),
-  account_id: integer("account_id")
+  account_id: uuid("account_id")
     .references(() => accounts.id)
     .notNull(),
   description: text("description"), // e.g., "Laptop Purchase Installments"
@@ -115,5 +127,4 @@ export const installmentPayments = createTable("installment_payments", {
   payment_date: date("payment_date"), // Nullable; set once the payment is made
   status: varchar("status", { length: 20 }).default("pending"), // e.g., pending, paid, late
   created_at: timestamp("created_at").defaultNow(),
-  // Payment amounts are now stored in the balanesWithCurrencyConversions table with entity_type='installment_payment'
 });
