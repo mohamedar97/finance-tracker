@@ -3,11 +3,14 @@ import { useState } from "react";
 import { AccountsHeader } from "./AccountsHeader";
 import { AccountsContent } from "./AccountsContent";
 import { AccountsSummary } from "./AccountsSummary";
-import { accounts as initialAccounts } from "./data/accountsData";
-import { Account, liabilityOptions } from "./types";
 import { AccountFormData } from "./AccountForm/types";
+import { Account, NewAccount } from "@/lib/types";
 
-export default function AccountsPage() {
+export default function Accounts({
+  initialAccounts,
+}: {
+  initialAccounts: Account[];
+}) {
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState("All Account Types");
@@ -63,34 +66,21 @@ export default function AccountsPage() {
   // Calculate summary statistics
   const totalAssets = filteredAccounts
     .filter((account) => !account.isLiability)
-    .reduce((sum, account) => sum + account.balance, 0);
+    .reduce((sum, account) => sum + parseFloat(account.balance.toString()), 0);
 
   const totalLiabilities = filteredAccounts
     .filter((account) => account.isLiability)
-    .reduce((sum, account) => sum + Math.abs(account.balance), 0);
+    .reduce(
+      (sum, account) => sum + Math.abs(parseFloat(account.balance.toString())),
+      0,
+    );
 
   const netWorth = totalAssets - totalLiabilities;
 
   // Handle add account
-  const handleAddAccount = (accountData: AccountFormData) => {
-    const now = new Date().toISOString();
-
-    // Create a new account with the data from the form
-    const newAccount: Account = {
-      id: (accounts.length + 1).toString(), // Simple ID generation
-      name: accountData.name,
-      type: accountData.type,
-      balance: accountData.balance,
-      currency: accountData.currency,
-      isLiability: accountData.isLiability,
-      lastUpdated: now,
-      createdAt: now,
-      userId: 1, // Default user ID
-    };
-
+  const onAddAccount = (accountData: Account) => {
     // Add the new account to the accounts state
-    setAccounts([...accounts, newAccount]);
-    console.log("Added new account:", newAccount);
+    setAccounts([...accounts, accountData]);
   };
 
   // Handle edit account
@@ -107,12 +97,19 @@ export default function AccountsPage() {
           : account,
       ),
     );
-    console.log(`Edited account ${id} with data:`, updatedData);
+  };
+
+  // Handle delete account
+  const handleDeleteAccount = (id: string) => {
+    // Remove the account from the accounts state
+    setAccounts((currentAccounts) =>
+      currentAccounts.filter((account) => account.id !== id),
+    );
   };
 
   return (
     <div className="flex-1 space-y-4 p-4 pt-2">
-      <AccountsHeader onAddAccount={handleAddAccount} />
+      <AccountsHeader onAddAccount={onAddAccount} />
 
       <div className="grid gap-4">
         <AccountsSummary
@@ -136,11 +133,11 @@ export default function AccountsPage() {
           setIsFiltersOpen={setIsFiltersOpen}
           accountTypes={accountTypes}
           currencyTypes={currencyTypes}
-          liabilityOptions={liabilityOptions}
           activeFiltersCount={activeFiltersCount}
           filteredAccounts={filteredAccounts}
           totalAccounts={accounts.length}
           onEditAccount={handleEditAccount}
+          onDeleteAccount={handleDeleteAccount}
         />
       </div>
     </div>

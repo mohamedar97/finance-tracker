@@ -5,6 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { formatCurrency } from "@/lib/utils";
 
 interface AccountsSummaryProps {
   totalAssets: number;
@@ -36,19 +37,13 @@ export function AccountsSummary({
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">Total Assets</p>
             <p className="text-2xl font-bold">
-              {new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency: "USD",
-              }).format(totalAssets)}
+              {formatCurrency(totalAssets, "USD")}
             </p>
           </div>
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">Total Liabilities</p>
             <p className="text-2xl font-bold text-red-500">
-              {new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency: "USD",
-              }).format(totalLiabilities)}
+              {formatCurrency(totalLiabilities, "USD", true)}
             </p>
           </div>
           <div className="space-y-2">
@@ -58,10 +53,7 @@ export function AccountsSummary({
                 netWorth < 0 ? "text-red-500" : ""
               }`}
             >
-              {new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency: "USD",
-              }).format(netWorth)}
+              {formatCurrency(netWorth, "USD", netWorth < 0)}
             </p>
             <p className="text-xs text-muted-foreground">
               Last Updated: {new Date().toLocaleDateString()}

@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import "@/styles/globals.css";
 import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,6 +25,7 @@ export default function RootLayout({
           <Header />
           <div className="flex flex-1">
             <main className="flex-1 overflow-y-auto">{children}</main>
+            <Toaster />
           </div>
         </div>
       </body>

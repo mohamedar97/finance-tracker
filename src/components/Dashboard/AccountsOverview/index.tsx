@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { formatCurrency } from "@/lib/utils";
 
 interface Account {
   id: string;
@@ -55,7 +56,7 @@ export function AccountsOverview() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span className="text-lg">{account.name}</span>
-                <span className="text-muted-foreground text-sm">
+                <span className="text-sm text-muted-foreground">
                   {account.type}
                 </span>
               </CardTitle>
@@ -63,12 +64,9 @@ export function AccountsOverview() {
             <CardContent>
               <div className="space-y-2">
                 <div className="text-2xl font-bold">
-                  {new Intl.NumberFormat("en-US", {
-                    style: "currency",
-                    currency: account.currency,
-                  }).format(account.balance)}
+                  {formatCurrency(account.balance, account.currency)}
                 </div>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-xs text-muted-foreground">
                   Last updated:{" "}
                   {new Date(account.lastUpdated).toLocaleDateString()}
                 </p>

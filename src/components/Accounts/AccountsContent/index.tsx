@@ -8,7 +8,7 @@ import {
 import { AccountsFilter } from "./AccountsFilter";
 import { AccountsTable } from "./AccountsTable";
 import { AccountsCardList } from "./AccountsCardList";
-import { Account } from "../types";
+import { Account } from "@/lib/types";
 
 interface AccountsContentProps {
   accounts: Account[];
@@ -24,11 +24,11 @@ interface AccountsContentProps {
   setIsFiltersOpen: (value: boolean) => void;
   accountTypes: string[];
   currencyTypes: string[];
-  liabilityOptions: string[];
   activeFiltersCount: number;
   filteredAccounts: Account[];
   totalAccounts: number;
   onEditAccount: (id: string, updatedData: Partial<Account>) => void;
+  onDeleteAccount: (id: string) => void;
 }
 
 export function AccountsContent({
@@ -45,11 +45,11 @@ export function AccountsContent({
   setIsFiltersOpen,
   accountTypes,
   currencyTypes,
-  liabilityOptions,
   activeFiltersCount,
   filteredAccounts,
   totalAccounts,
   onEditAccount,
+  onDeleteAccount,
 }: AccountsContentProps) {
   return (
     <Card>
@@ -73,7 +73,6 @@ export function AccountsContent({
           setIsFiltersOpen={setIsFiltersOpen}
           accountTypes={accountTypes}
           currencyTypes={currencyTypes}
-          liabilityOptions={liabilityOptions}
           activeFiltersCount={activeFiltersCount}
           totalFilteredAccounts={filteredAccounts.length}
           totalAccounts={totalAccounts}
@@ -83,10 +82,12 @@ export function AccountsContent({
         <AccountsTable
           accounts={filteredAccounts}
           onEditAccount={onEditAccount}
+          onDeleteAccount={onDeleteAccount}
         />
         <AccountsCardList
           accounts={filteredAccounts}
           onEditAccount={onEditAccount}
+          onDeleteAccount={onDeleteAccount}
         />
       </CardContent>
     </Card>

@@ -7,15 +7,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Account } from "../types";
+import { Account } from "@/lib/types";
+import { formatCurrency } from "@/lib/utils";
 import { EditAccountDialog } from "../AccountForm/EditAccountDialog";
+import { DeleteAccountDialog } from "../AccountForm/DeleteAccountDialog";
 
 interface AccountsTableProps {
   accounts: Account[];
   onEditAccount: (id: string, updatedData: Partial<Account>) => void;
+  onDeleteAccount: (id: string) => void;
 }
 
-export function AccountsTable({ accounts, onEditAccount }: AccountsTableProps) {
+export function AccountsTable({
+  accounts,
+  onEditAccount,
+  onDeleteAccount,
+}: AccountsTableProps) {
   return (
     <div className="hidden sm:block">
       <ScrollArea className="h-[calc(100vh-500px)] min-h-[400px]">
@@ -27,9 +34,8 @@ export function AccountsTable({ accounts, onEditAccount }: AccountsTableProps) {
               <TableHead className="w-[15%] text-right">Balance</TableHead>
               <TableHead className="w-[10%]">Currency</TableHead>
               <TableHead className="w-[10%]">Status</TableHead>
-              <TableHead className="w-[15%]">Last Updated</TableHead>
               <TableHead className="w-[10%]">Created</TableHead>
-              <TableHead className="w-[5%]">Actions</TableHead>
+              <TableHead className="w-[10%]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -52,11 +58,11 @@ export function AccountsTable({ accounts, onEditAccount }: AccountsTableProps) {
                       account.isLiability ? "text-red-500" : ""
                     }`}
                   >
-                    {new Intl.NumberFormat("en-US", {
-                      style: "currency",
-                      currency: account.currency,
-                      signDisplay: account.isLiability ? "never" : "auto",
-                    }).format(Math.abs(account.balance))}
+                    {formatCurrency(
+                      account.balance,
+                      account.currency,
+                      account.isLiability,
+                    )}
                     {account.isLiability ? " (debt)" : ""}
                   </TableCell>
                   <TableCell>{account.currency}</TableCell>
@@ -71,17 +77,21 @@ export function AccountsTable({ accounts, onEditAccount }: AccountsTableProps) {
                       {account.isLiability ? "Liability" : "Asset"}
                     </span>
                   </TableCell>
-                  <TableCell>
-                    {new Date(account.lastUpdated).toLocaleDateString()}
-                  </TableCell>
+
                   <TableCell>
                     {new Date(account.createdAt).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
-                    <EditAccountDialog
-                      account={account}
-                      onEditAccount={onEditAccount}
-                    />
+                    <div className="flex items-center space-x-1">
+                      <EditAccountDialog
+                        account={account}
+                        onEditAccount={onEditAccount}
+                      />
+                      <DeleteAccountDialog
+                        account={account}
+                        onDeleteAccount={onDeleteAccount}
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

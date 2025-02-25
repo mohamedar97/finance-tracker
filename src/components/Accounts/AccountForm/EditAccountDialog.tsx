@@ -10,9 +10,11 @@ import {
 } from "@/components/ui/dialog";
 import { PencilIcon } from "lucide-react";
 import { AccountForm } from "./AccountForm";
-import { Account } from "../types";
+import { Account } from "@/lib/types";
 import type { AccountFormData } from "./types";
 import { useState } from "react";
+import { updateAccount } from "@/server/actions/accounts/updateAccount";
+import { toast } from "sonner";
 
 interface EditAccountDialogProps {
   account: Account;
@@ -24,13 +26,47 @@ export function EditAccountDialog({
   onEditAccount,
 }: EditAccountDialogProps) {
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (data: AccountFormData) => {
-    console.log("Editing account:", data);
-    // Here you would typically call an API to update the account
-    onEditAccount(account.id, data);
-    // Close the dialog
-    setOpen(false);
+  const handleOpenChange = (newOpen: boolean) => {
+    // Prevent closing the dialog while submitting
+    if (isSubmitting && !newOpen) return;
+    setOpen(newOpen);
+  };
+
+  const handleSubmit = async (data: AccountFormData) => {
+    try {
+      setIsSubmitting(true);
+
+      // Call the server action to update the account
+      const result = await updateAccount({
+        accountId: account.id,
+        name: data.name,
+        type: data.type,
+        balance: data.balance,
+        currency: data.currency,
+        isLiability: data.isLiability,
+      });
+
+      if (result.success) {
+        // Notify parent component about the updated account
+        onEditAccount(account.id, data);
+
+        // Show success toast
+        toast.success("Account updated successfully");
+
+        // Close the dialog
+        setOpen(false);
+      } else {
+        // Show error toast
+        toast.error(result.error || "Failed to update account");
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred while updating the account");
+      console.error("Error updating account:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
@@ -39,7 +75,7 @@ export function EditAccountDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon" className="h-8 w-8">
           <PencilIcon className="h-4 w-4" />
@@ -56,6 +92,7 @@ export function EditAccountDialog({
             defaultValues={account}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
+            isLoading={isSubmitting}
           />
         </div>
       </DialogContent>

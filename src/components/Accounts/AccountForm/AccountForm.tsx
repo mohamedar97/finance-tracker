@@ -10,28 +10,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState } from "react";
-import { Account } from "../types";
+import { Account } from "@/lib/types";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AccountFormData } from "./types";
+import { Loader2 } from "lucide-react";
 
-const accountTypes = [
-  "Checking",
-  "Savings",
-  "Credit Card",
-  "Investment",
-  "Loan",
-  "Mortgage",
-  "Cash",
-  "Other",
-];
+const accountTypes = ["Checking", "Savings"];
 
-const currencies = ["USD", "EUR", "GBP", "JPY", "CAD", "AUD"];
+const currencies = ["USD", "EGP", "Gold"];
 
 interface AccountFormProps {
   action: "create" | "edit";
   defaultValues?: Account;
   onSubmit: (data: AccountFormData) => void;
   onCancel?: () => void;
+  isLoading?: boolean;
 }
 
 export function AccountForm({
@@ -39,12 +32,13 @@ export function AccountForm({
   defaultValues,
   onSubmit,
   onCancel,
+  isLoading = false,
 }: AccountFormProps) {
   const [formData, setFormData] = useState<AccountFormData>({
     name: defaultValues?.name || "",
     type: defaultValues?.type || "Checking",
-    balance: defaultValues?.balance || 0,
-    currency: defaultValues?.currency || "USD",
+    balance: defaultValues?.balance || "",
+    currency: defaultValues?.currency || "EGP",
     isLiability: defaultValues?.isLiability || false,
   });
 
@@ -83,8 +77,8 @@ export function AccountForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
+    <form onSubmit={handleSubmit} className="space-y-3">
+      <div className="space-y-1">
         <label htmlFor="name" className="text-sm font-medium">
           Account Name
         </label>
@@ -98,7 +92,7 @@ export function AccountForm({
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1">
         <label htmlFor="type" className="text-sm font-medium">
           Account Type
         </label>
@@ -119,22 +113,7 @@ export function AccountForm({
         </Select>
       </div>
 
-      <div className="space-y-2">
-        <label htmlFor="balance" className="text-sm font-medium">
-          Balance
-        </label>
-        <Input
-          id="balance"
-          name="balance"
-          type="number"
-          step="0.01"
-          value={formData.balance}
-          onChange={handleInputChange}
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
+      <div className="space-y-1">
         <label htmlFor="currency" className="text-sm font-medium">
           Currency
         </label>
@@ -154,8 +133,21 @@ export function AccountForm({
           </SelectContent>
         </Select>
       </div>
-
-      <div className="flex items-center space-x-2">
+      <div className="space-y-1">
+        <label htmlFor="balance" className="text-sm font-medium">
+          Balance
+        </label>
+        <Input
+          id="balance"
+          name="balance"
+          type="string"
+          placeholder="e.g. 1000.00"
+          value={formData.balance}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+      <div className="flex items-center space-x-2 pt-1">
         <Checkbox
           id="isLiability"
           checked={formData.isLiability}
@@ -170,11 +162,29 @@ export function AccountForm({
       </div>
 
       <div className="flex justify-end space-x-2 pt-2">
-        <Button type="button" variant="outline" onClick={handleCancel}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleCancel}
+          className="flex-1 sm:flex-none"
+        >
           Cancel
         </Button>
-        <Button type="submit">
-          {action === "create" ? "Create Account" : "Save Changes"}
+        <Button
+          type="submit"
+          className="flex-1 sm:flex-none"
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {action === "create" ? "Creating..." : "Saving..."}
+            </>
+          ) : action === "create" ? (
+            "Create Account"
+          ) : (
+            "Save Changes"
+          )}
         </Button>
       </div>
     </form>

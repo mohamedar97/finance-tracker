@@ -27,7 +27,6 @@ interface AccountsFilterProps {
   setIsFiltersOpen: (value: boolean) => void;
   accountTypes: string[];
   currencyTypes: string[];
-  liabilityOptions: string[];
   activeFiltersCount: number;
   totalFilteredAccounts: number;
   totalAccounts: number;
@@ -46,11 +45,16 @@ export function AccountsFilter({
   setIsFiltersOpen,
   accountTypes,
   currencyTypes,
-  liabilityOptions,
   activeFiltersCount,
   totalFilteredAccounts,
   totalAccounts,
 }: AccountsFilterProps) {
+  const liabilityOptions = [
+    "Assets & Liabilities",
+    "Assets Only",
+    "Liabilities Only",
+  ];
+
   return (
     <>
       {/* Mobile Filters */}

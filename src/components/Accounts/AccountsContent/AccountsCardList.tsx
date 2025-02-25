@@ -1,15 +1,19 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Account } from "../types";
+import { Account } from "@/lib/types";
 import { EditAccountDialog } from "../AccountForm/EditAccountDialog";
+import { DeleteAccountDialog } from "../AccountForm/DeleteAccountDialog";
+import { formatCurrency } from "@/lib/utils";
 
 interface AccountsCardListProps {
   accounts: Account[];
   onEditAccount: (id: string, updatedData: Partial<Account>) => void;
+  onDeleteAccount: (id: string) => void;
 }
 
 export function AccountsCardList({
   accounts,
   onEditAccount,
+  onDeleteAccount,
 }: AccountsCardListProps) {
   return (
     <div className="block sm:hidden">
@@ -47,26 +51,28 @@ export function AccountsCardList({
                     <div
                       className={`font-semibold ${account.isLiability ? "text-red-500" : ""}`}
                     >
-                      {new Intl.NumberFormat("en-US", {
-                        style: "currency",
-                        currency: account.currency,
-                        signDisplay: account.isLiability ? "never" : "auto",
-                      }).format(Math.abs(account.balance))}
+                      {formatCurrency(
+                        account.balance,
+                        account.currency,
+                        account.isLiability,
+                      )}
                       {account.isLiability ? " (debt)" : ""}
                     </div>
-                    <EditAccountDialog
-                      account={account}
-                      onEditAccount={onEditAccount}
-                    />
+                    <div className="flex items-center space-x-1">
+                      <EditAccountDialog
+                        account={account}
+                        onEditAccount={onEditAccount}
+                      />
+                      <DeleteAccountDialog
+                        account={account}
+                        onDeleteAccount={onDeleteAccount}
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <div>
                     Created: {new Date(account.createdAt).toLocaleDateString()}
-                  </div>
-                  <div>
-                    Updated:{" "}
-                    {new Date(account.lastUpdated).toLocaleDateString()}
                   </div>
                 </div>
               </div>

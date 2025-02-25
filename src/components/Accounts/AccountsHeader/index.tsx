@@ -1,8 +1,7 @@
 import { CreateAccountDialog } from "../AccountForm/CreateAccountDialog";
-import { AccountFormData } from "../AccountForm/types";
-
+import { Account } from "@/lib/types";
 interface AccountsHeaderProps {
-  onAddAccount: (accountData: AccountFormData) => void;
+  onAddAccount: (accountData: Account) => void;
 }
 
 export function AccountsHeader({ onAddAccount }: AccountsHeaderProps) {

@@ -1,7 +1,7 @@
 export interface AccountFormData {
   name: string;
   type: string;
-  balance: number;
+  balance: string;
   currency: string;
   isLiability: boolean;
 }

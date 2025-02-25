@@ -24,6 +24,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { SlidersHorizontal, X } from "lucide-react";
 import { useState } from "react";
+import { formatCurrency } from "@/lib/utils";
 
 interface Transaction {
   id: string;
@@ -136,7 +137,7 @@ export function TransactionsOverview() {
             <Button variant="outline" className="relative shrink-0">
               <SlidersHorizontal className="h-4 w-4" />
               {activeFiltersCount > 0 && (
-                <div className="bg-primary text-primary-foreground absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full text-xs">
+                <div className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
                   {activeFiltersCount}
                 </div>
               )}
@@ -238,17 +239,17 @@ export function TransactionsOverview() {
                         : "text-red-600"
                     }`}
                   >
-                    {new Intl.NumberFormat("en-US", {
-                      style: "currency",
-                      currency: "USD",
-                      signDisplay: "never",
-                    }).format(Math.abs(transaction.amount))}
+                    {formatCurrency(
+                      transaction.amount,
+                      "USD",
+                      transaction.type === "expense",
+                    )}
                   </div>
                 </div>
-                <div className="text-muted-foreground text-sm">
+                <div className="text-sm text-muted-foreground">
                   {new Date(transaction.date).toLocaleDateString()}
                 </div>
-                <div className="text-muted-foreground flex justify-between text-sm">
+                <div className="flex justify-between text-sm text-muted-foreground">
                   <div>{transaction.category}</div>
                   <div>{transaction.account}</div>
                 </div>
@@ -295,11 +296,11 @@ export function TransactionsOverview() {
                         : "text-red-600"
                     }`}
                   >
-                    {new Intl.NumberFormat("en-US", {
-                      style: "currency",
-                      currency: "USD",
-                      signDisplay: "never",
-                    }).format(Math.abs(transaction.amount))}
+                    {formatCurrency(
+                      transaction.amount,
+                      "USD",
+                      transaction.type === "expense",
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
