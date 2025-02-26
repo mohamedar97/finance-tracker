@@ -1,6 +1,32 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Account } from "@/lib/types";
+import { formatCurrency } from "@/lib/utils";
 
-export function DashboardMetrics() {
+export function DashboardMetrics({ accounts }: { accounts: Account[] }) {
+  // Calculate total balances
+  const getTotalBalance = () => {
+    return accounts.reduce((total, account) => {
+      return total + parseFloat(account.balance);
+    }, 0);
+  };
+
+  // Calculate savings balance (accounts of type "Savings")
+  const getSavingsBalance = () => {
+    return accounts
+      .filter((account) => account.type === "Savings")
+      .reduce((total, account) => {
+        return total + parseFloat(account.balance);
+      }, 0);
+  };
+
+  // Default currency (use the first account's currency or USD as fallback)
+  const defaultCurrency =
+    accounts.length > 0 ? (accounts[0]?.currency ?? "USD") : "USD";
+
+  const totalBalance = getTotalBalance();
+  const savingsBalance = getSavingsBalance();
+  const liquidBalance = totalBalance - savingsBalance;
+
   return (
     <div className="flex flex-col justify-between md:flex-row md:gap-4">
       <Card className="mb-4 w-full md:mb-0 md:w-1/3">
@@ -8,9 +34,12 @@ export function DashboardMetrics() {
           <CardTitle className="text-sm font-medium">Net Liquid</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">$45,231.89</div>
+          <div className="text-2xl font-bold">
+            {formatCurrency(liquidBalance.toString(), defaultCurrency)}
+          </div>
           <p className="text-xs text-muted-foreground">
-            +20.1% from last month
+            From {accounts.filter((a) => a.type !== "Savings").length}{" "}
+            account(s)
           </p>
         </CardContent>
       </Card>
@@ -19,9 +48,12 @@ export function DashboardMetrics() {
           <CardTitle className="text-sm font-medium">Net Savings</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">$17,405.15</div>
+          <div className="text-2xl font-bold">
+            {formatCurrency(savingsBalance.toString(), defaultCurrency)}
+          </div>
           <p className="text-xs text-muted-foreground">
-            +180.1% from last month
+            From {accounts.filter((a) => a.type === "Savings").length}{" "}
+            account(s)
           </p>
         </CardContent>
       </Card>
@@ -30,8 +62,12 @@ export function DashboardMetrics() {
           <CardTitle className="text-sm font-medium">Net Total</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">$62,637.04</div>
-          <p className="text-xs text-muted-foreground">+19% from last month</p>
+          <div className="text-2xl font-bold">
+            {formatCurrency(totalBalance.toString(), defaultCurrency)}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            From {accounts.length} account(s)
+          </p>
         </CardContent>
       </Card>
     </div>

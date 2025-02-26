@@ -11,8 +11,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { AccountsOverview } from "./AccountsOverview";
 import { DashboardOverviewTab } from "./DashboardOverview";
+import { Account } from "@/lib/types";
 
-const Dashboard = () => {
+const Dashboard = ({ accounts }: { accounts: Account[] }) => {
   return (
     <div className="flex-1 space-y-4 p-4 pt-2">
       <div className="flex items-center justify-between space-y-2">
@@ -25,7 +26,7 @@ const Dashboard = () => {
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="space-y-4">
-          <DashboardOverviewTab />
+          <DashboardOverviewTab accounts={accounts} />
         </TabsContent>
         <TabsContent value="accounts" className="space-y-4">
           <div className="grid gap-4">
@@ -37,7 +38,7 @@ const Dashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <AccountsOverview />
+                <AccountsOverview accounts={accounts} />
               </CardContent>
             </Card>
           </div>

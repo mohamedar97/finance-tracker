@@ -3,7 +3,6 @@ import { useState } from "react";
 import { AccountsHeader } from "./AccountsHeader";
 import { AccountsContent } from "./AccountsContent";
 import { AccountsSummary } from "./AccountsSummary";
-import { AccountFormData } from "./AccountForm/types";
 import { Account, NewAccount } from "@/lib/types";
 
 export default function Accounts({

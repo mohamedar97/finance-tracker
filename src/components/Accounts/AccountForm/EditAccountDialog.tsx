@@ -10,8 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { PencilIcon } from "lucide-react";
 import { AccountForm } from "./AccountForm";
-import { Account } from "@/lib/types";
-import type { AccountFormData } from "./types";
+import { Account, AccountFormData } from "@/lib/types";
 import { useState } from "react";
 import { updateAccount } from "@/server/actions/accounts/updateAccount";
 import { toast } from "sonner";

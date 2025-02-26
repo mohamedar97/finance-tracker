@@ -10,14 +10,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState } from "react";
-import { Account } from "@/lib/types";
+import {
+  Account,
+  AccountFormData,
+  AccountTypes,
+  Currencies,
+} from "@/lib/types";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AccountFormData } from "./types";
 import { Loader2 } from "lucide-react";
-
-const accountTypes = ["Checking", "Savings"];
-
-const currencies = ["USD", "EGP", "Gold"];
 
 interface AccountFormProps {
   action: "create" | "edit";
@@ -36,9 +36,9 @@ export function AccountForm({
 }: AccountFormProps) {
   const [formData, setFormData] = useState<AccountFormData>({
     name: defaultValues?.name || "",
-    type: defaultValues?.type || "Checking",
+    type: defaultValues?.type || AccountTypes[0]!,
     balance: defaultValues?.balance || "",
-    currency: defaultValues?.currency || "EGP",
+    currency: defaultValues?.currency || Currencies[0]!,
     isLiability: defaultValues?.isLiability || false,
   });
 
@@ -104,7 +104,7 @@ export function AccountForm({
             <SelectValue placeholder="Select account type" />
           </SelectTrigger>
           <SelectContent>
-            {accountTypes.map((type) => (
+            {AccountTypes.map((type) => (
               <SelectItem key={type} value={type}>
                 {type}
               </SelectItem>
@@ -125,7 +125,7 @@ export function AccountForm({
             <SelectValue placeholder="Select currency" />
           </SelectTrigger>
           <SelectContent>
-            {currencies.map((currency) => (
+            {Currencies.map((currency) => (
               <SelectItem key={currency} value={currency}>
                 {currency}
               </SelectItem>

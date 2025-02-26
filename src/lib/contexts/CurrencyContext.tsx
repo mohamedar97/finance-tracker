@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState } from "react";
 import { fetchAndStoreFXRates } from "@/server/actions/FXRates/fetchAndStoreFXRates";
-import { type Currency } from "@/lib/types";
+import { Currencies, type Currency } from "@/lib/types";
 
 // Define the context type
 type CurrencyContextType = {
@@ -49,7 +49,9 @@ export function CurrencyProvider({
   const [usdRate, setUsdRate] = useState<number>(initialUsdRate);
   const [goldRate, setGoldRate] = useState<number>(initialGoldRate);
   const [timestamp, setTimestamp] = useState<Date>(initialTimestamp);
-  const [selectedCurrency, setSelectedCurrency] = useState<Currency>("USD");
+  const [selectedCurrency, setSelectedCurrency] = useState<Currency>(
+    Currencies[0]!,
+  );
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
   // Format timestamp for display

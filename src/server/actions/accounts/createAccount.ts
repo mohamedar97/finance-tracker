@@ -1,5 +1,6 @@
 "use server";
 
+import { AccountType, Currency } from "@/lib/types";
 import { auth } from "@/server/auth";
 import { db } from "@/server/db";
 import { accounts } from "@/server/db/schema";
@@ -29,9 +30,9 @@ export async function createAccount(data: CreateAccountInput) {
       .values({
         userId: userId,
         name: data.name,
-        currency: data.currency as "USD" | "EGP" | "Gold",
+        currency: data.currency as Currency,
         balance: data.balance,
-        type: data.type as "Savings" | "Checking",
+        type: data.type as AccountType,
         isLiability: data.isLiability,
       })
       .returning();

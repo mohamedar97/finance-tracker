@@ -5,6 +5,8 @@ import { accounts } from "@/server/db/schema";
 import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { auth } from "@/server/auth";
+import { AccountType } from "@/lib/types";
+import { Currency } from "@/lib/types";
 
 interface UpdateAccountInput {
   accountId: string;
@@ -18,9 +20,9 @@ interface UpdateAccountInput {
 // Define a type for the update data that matches the possible fields
 type AccountUpdateData = {
   name?: string;
-  type?: "Savings" | "Checking";
+  type?: AccountType;
   balance?: string;
-  currency?: "USD" | "EGP" | "Gold";
+  currency?: Currency;
   isLiability?: boolean;
 };
 
@@ -41,11 +43,10 @@ export async function updateAccount(data: UpdateAccountInput) {
 
     // Only include fields that are provided
     if (data.name !== undefined) updateData.name = data.name;
-    if (data.type !== undefined)
-      updateData.type = data.type as "Savings" | "Checking";
+    if (data.type !== undefined) updateData.type = data.type as AccountType;
     if (data.balance !== undefined) updateData.balance = data.balance;
     if (data.currency !== undefined)
-      updateData.currency = data.currency as "USD" | "EGP" | "Gold";
+      updateData.currency = data.currency as Currency;
     if (data.isLiability !== undefined)
       updateData.isLiability = data.isLiability;
 

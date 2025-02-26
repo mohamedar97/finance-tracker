@@ -15,8 +15,8 @@ import {
 export const createTable = pgTableCreator((name) => `finance-tracker_${name}`);
 
 // Define enums
-export const currencyEnum = pgEnum("currency_type", ["USD", "EGP", "Gold"]);
-export const accountTypeEnum = pgEnum("account_type", ["Savings", "Checking"]);
+export const currencyEnum = pgEnum("currency_type", ["EGP", "USD", "Gold"]);
+export const accountTypeEnum = pgEnum("account_type", ["Savings", "Current"]);
 
 // Users Table
 export const users = createTable("users", {
@@ -26,7 +26,7 @@ export const users = createTable("users", {
   phoneNumber: varchar("phone_number", { length: 100 }).notNull().unique(),
   hashedPassword: varchar("hashed_password", { length: 255 }).notNull(),
   salt: varchar("salt", { length: 255 }).notNull(),
-  created_at: timestamp("created_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Accounts Table
@@ -45,19 +45,26 @@ export const accounts = createTable("accounts", {
 
 // Transactions Table
 export const transactions = createTable("transactions", {
-  transaction_id: serial("transaction_id").primaryKey(),
-  account_id: uuid("account_id")
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .references(() => users.id)
+    .notNull(),
+  accountId: uuid("account_id")
     .references(() => accounts.id)
     .notNull(),
-  transaction_date: date("transaction_date").notNull(),
+  currencyRateId: integer("currency_rate_id").references(
+    () => currencyRates.id,
+  ),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   description: text("description"),
   category: varchar("category", { length: 50 }),
-  created_at: timestamp("created_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  transactionDate: date("transaction_date").notNull(),
 });
 
 // Currency Rates Table
 export const currencyRates = createTable("currency_rates", {
-  rateId: serial("rate_id").primaryKey(),
+  id: serial("id").primaryKey(),
   usdRate: decimal("usd_rate", { precision: 15, scale: 6 }).notNull(), // EGP per 1 USD
   goldGrate: decimal("gold_g_rate", { precision: 15, scale: 6 }).notNull(), // EGP per 1g of 21 carat gold
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -65,22 +72,22 @@ export const currencyRates = createTable("currency_rates", {
 
 // Snapshots Table
 export const snapshots = createTable("snapshots", {
-  snapshotId: serial("snapshot_id").primaryKey(),
+  id: uuid("id").defaultRandom().primaryKey(),
   userId: uuid("user_id")
     .references(() => users.id)
     .notNull(),
   snapshotDate: date("snapshot_date").notNull(),
   currencyRateId: integer("currency_rate_id").references(
-    () => currencyRates.rateId,
+    () => currencyRates.id,
   ),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Snapshot_Details Table (Additional Table)
 export const snapshotDetails = createTable("snapshot_details", {
-  snapshotDetailId: serial("snapshot_detail_id").primaryKey(),
-  snapshotId: integer("snapshot_id")
-    .references(() => snapshots.snapshotId, { onDelete: "cascade" })
+  id: serial("id").primaryKey(),
+  snapshotId: uuid("snapshot_id")
+    .references(() => snapshots.id, { onDelete: "cascade" })
     .notNull(),
   accountId: uuid("account_id")
     .references(() => accounts.id)
@@ -90,7 +97,7 @@ export const snapshotDetails = createTable("snapshot_details", {
 
 // BankStatements Table (Optional)
 export const bankStatements = createTable("bank_statements", {
-  statement_id: serial("statement_id").primaryKey(),
+  id: uuid("id").defaultRandom().primaryKey(),
   userId: uuid("user_id")
     .references(() => users.id)
     .notNull(),
@@ -101,7 +108,7 @@ export const bankStatements = createTable("bank_statements", {
 
 // Installment Plans Table
 export const installmentPlans = createTable("installment_plans", {
-  installmentPlanId: serial("installment_plan_id").primaryKey(),
+  id: serial("id").primaryKey(),
   userId: uuid("user_id")
     .references(() => users.id)
     .notNull(),
@@ -120,9 +127,9 @@ export const installmentPlans = createTable("installment_plans", {
 
 // Installment Payments Table
 export const installmentPayments = createTable("installment_payments", {
-  installmentPaymentId: serial("installment_payment_id").primaryKey(),
+  id: serial("id").primaryKey(),
   installmentPlanId: integer("installment_plan_id")
-    .references(() => installmentPlans.installmentPlanId)
+    .references(() => installmentPlans.id)
     .notNull(),
   dueDate: date("due_date").notNull(),
   paymentDate: date("payment_date"), // Nullable; set once the payment is made

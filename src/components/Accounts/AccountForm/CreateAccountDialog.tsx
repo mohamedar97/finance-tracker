@@ -9,12 +9,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Loader2, Plus } from "lucide-react";
-import type { AccountFormData } from "./types";
 import { AccountForm } from "./AccountForm";
 import { useState } from "react";
 import { toast } from "sonner";
 import { createAccount } from "@/server/actions/accounts/createAccount";
-import { Account } from "@/lib/types";
+import { Account, AccountFormData } from "@/lib/types";
 interface CreateAccountDialogProps {
   onAddAccount: (accountData: Account) => void;
 }
