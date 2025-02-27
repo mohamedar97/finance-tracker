@@ -41,3 +41,15 @@ export interface DashboardMetricsData {
     changePercentage: number;
   };
 }
+export interface HistoricalMetrics {
+  liquidAssets: number;
+  savings: number;
+  liabilities: number;
+  totalAssets: number;
+  netTotal: number;
+}
+
+export interface SnapshotDataPoint {
+  date: Date;
+  metrics: HistoricalMetrics;
+}

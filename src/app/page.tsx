@@ -1,6 +1,7 @@
 import Dashboard from "@/components/Dashboard";
 import { getAccounts } from "@/server/actions/accounts/getAccounts";
 import { getTransactions } from "@/server/actions/transactions/getTransactions";
+import { fetchSnapshotsInRange } from "@/server/actions/snapshots/fetchSnapshotsInRange";
 
 export default async function HomePage() {
   // Fetch accounts data on the server
@@ -17,6 +18,11 @@ export default async function HomePage() {
     error: transactionsError,
   } = await getTransactions();
 
+  // Fetch snapshots data for the chart (last 6 months by default)
+  const snapshotData = await fetchSnapshotsInRange();
+
+  console.log("snapshotData", snapshotData);
+
   if (!accountsSuccess) {
     console.error("Failed to fetch accounts:", accountsError);
   }
@@ -26,6 +32,10 @@ export default async function HomePage() {
   }
 
   return (
-    <Dashboard accounts={accounts || []} transactions={transactions || []} />
+    <Dashboard
+      accounts={accounts || []}
+      transactions={transactions || []}
+      snapshotData={snapshotData}
+    />
   );
 }

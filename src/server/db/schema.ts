@@ -74,6 +74,7 @@ export const currencyRates = createTable("currency_rates", {
   id: serial("id").primaryKey(),
   usdRate: decimal("usd_rate", { precision: 15, scale: 6 }).notNull(), // EGP per 1 USD
   goldGrate: decimal("gold_g_rate", { precision: 15, scale: 6 }).notNull(), // EGP per 1g of 21 carat gold
+  date: date("date").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -87,19 +88,10 @@ export const snapshots = createTable("snapshots", {
   currencyRateId: integer("currency_rate_id").references(
     () => currencyRates.id,
   ),
+  liquidAssets: decimal("liquid_assets", { precision: 15, scale: 2 }).notNull(),
+  savings: decimal("savings", { precision: 15, scale: 2 }).notNull(),
+  liabilities: decimal("liabilities", { precision: 15, scale: 2 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Snapshot_Details Table (Additional Table)
-export const snapshotDetails = createTable("snapshot_details", {
-  id: serial("id").primaryKey(),
-  snapshotId: uuid("snapshot_id")
-    .references(() => snapshots.id, { onDelete: "cascade" })
-    .notNull(),
-  accountId: uuid("account_id")
-    .references(() => accounts.id)
-    .notNull(),
-  recordedAt: timestamp("recorded_at").defaultNow(),
 });
 
 // BankStatements Table (Optional)

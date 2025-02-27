@@ -1,23 +1,12 @@
 "use server";
 
-import {
-  accounts,
-  snapshots,
-  snapshotDetails,
-  currencyRates,
-} from "@/server/db/schema";
+import { accounts, snapshots, currencyRates } from "@/server/db/schema";
 import { db } from "@/server/db";
 import { desc, eq, and, sql } from "drizzle-orm";
 import { auth } from "@/server/auth";
+import { HistoricalMetrics } from "@/lib/types";
 
 // Interface defining the structure of historical metrics
-export interface HistoricalMetrics {
-  liquidAssets: number;
-  savings: number;
-  liabilities: number;
-  totalAssets: number;
-  netTotal: number;
-}
 
 /**
  * Fetches historical snapshot data from a specific date
@@ -54,15 +43,6 @@ export async function fetchSnapshot(
     return null;
   }
 
-  // Get the snapshot details for the previous snapshot
-  const previousSnapshotDetails = await db.query.snapshotDetails.findMany({
-    where: eq(snapshotDetails.snapshotId, previousSnapshot.id),
-  });
-
-  if (previousSnapshotDetails.length === 0) {
-    return null;
-  }
-
   // Get the currency rates at the time of the previous snapshot
   const previousRates = await db.query.currencyRates.findFirst({
     where: eq(currencyRates.id, previousSnapshot.currencyRateId || 0),
@@ -72,56 +52,17 @@ export async function fetchSnapshot(
     return null;
   }
 
-  // Get historical account data for the snapshot
-  const previousAccounts = await Promise.all(
-    previousSnapshotDetails.map(async (detail) => {
-      return db.query.accounts.findFirst({
-        where: eq(accounts.id, detail.accountId),
-      });
-    }),
-  );
-
-  // Filter out null values
-  const validPreviousAccounts = previousAccounts.filter(Boolean);
-
-  // Initialize historical metrics
-  let previousLiquidAssets = 0;
-  let previousSavings = 0;
-  let previousLiabilities = 0;
-
-  // Process historical accounts
-  for (const account of validPreviousAccounts) {
-    if (!account) continue;
-
-    // Convert all currencies to EGP for consistent calculations
-    let balanceInEGP = 0;
-
-    if (account.currency === "USD") {
-      balanceInEGP = Number(account.balance) * Number(previousRates.usdRate);
-    } else if (account.currency === "EGP") {
-      balanceInEGP = Number(account.balance);
-    } else if (account.currency === "Gold") {
-      // Convert gold directly to EGP
-      balanceInEGP = Number(account.balance) * Number(previousRates.goldGrate);
-    }
-
-    if (account.isLiability) {
-      previousLiabilities += balanceInEGP;
-    } else if (account.type === "Savings") {
-      previousSavings += balanceInEGP;
-    } else {
-      previousLiquidAssets += balanceInEGP;
-    }
-  }
-
-  const previousTotalAssets = previousLiquidAssets + previousSavings;
-  const previousNetTotal = previousTotalAssets - previousLiabilities;
-
+  // Now that the metrics are directly stored in the snapshots table,
+  // we can return them without additional processing
   return {
-    liquidAssets: previousLiquidAssets,
-    savings: previousSavings,
-    liabilities: previousLiabilities,
-    totalAssets: previousTotalAssets,
-    netTotal: previousNetTotal,
+    liquidAssets: Number(previousSnapshot.liquidAssets),
+    savings: Number(previousSnapshot.savings),
+    liabilities: Number(previousSnapshot.liabilities),
+    totalAssets:
+      Number(previousSnapshot.liquidAssets) + Number(previousSnapshot.savings),
+    netTotal:
+      Number(previousSnapshot.liquidAssets) +
+      Number(previousSnapshot.savings) -
+      Number(previousSnapshot.liabilities),
   };
 }

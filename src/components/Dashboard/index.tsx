@@ -11,14 +11,16 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { AccountsOverview } from "./AccountsOverview";
 import { DashboardOverviewTab } from "./DashboardOverview";
-import { Account, Transaction } from "@/lib/types";
+import { Account, Transaction, SnapshotDataPoint } from "@/lib/types";
 
 const Dashboard = ({
   accounts,
   transactions,
+  snapshotData,
 }: {
   accounts: Account[];
   transactions: Transaction[];
+  snapshotData: SnapshotDataPoint[];
 }) => {
   return (
     <div className="flex-1 space-y-4 p-4 pt-2">
@@ -35,6 +37,7 @@ const Dashboard = ({
           <DashboardOverviewTab
             accounts={accounts}
             transactions={transactions}
+            snapshotData={snapshotData}
           />
         </TabsContent>
         <TabsContent value="accounts" className="space-y-4">

@@ -36,6 +36,7 @@ export async function fetchAndStoreFXRates({
       .values({
         usdRate: usdRate.toString(),
         goldGrate: goldRate.toString(),
+        date: new Date().toISOString(),
       })
       .returning();
 
