@@ -85,9 +85,9 @@ export const snapshots = createTable("snapshots", {
     .references(() => users.id)
     .notNull(),
   snapshotDate: date("snapshot_date").notNull(),
-  currencyRateId: integer("currency_rate_id").references(
-    () => currencyRates.id,
-  ),
+  currencyRateId: integer("currency_rate_id")
+    .notNull()
+    .references(() => currencyRates.id),
   liquidAssets: decimal("liquid_assets", { precision: 15, scale: 2 }).notNull(),
   savings: decimal("savings", { precision: 15, scale: 2 }).notNull(),
   liabilities: decimal("liabilities", { precision: 15, scale: 2 }).notNull(),

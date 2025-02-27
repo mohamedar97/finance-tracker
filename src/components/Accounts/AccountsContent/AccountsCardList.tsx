@@ -1,5 +1,5 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Account } from "@/lib/types";
+import { Account, Currency } from "@/lib/types";
 import { EditAccountDialog } from "../AccountForm/EditAccountDialog";
 import { DeleteAccountDialog } from "../AccountForm/DeleteAccountDialog";
 import { formatCurrency } from "@/lib/utils";
@@ -8,12 +8,14 @@ interface AccountsCardListProps {
   accounts: Account[];
   onEditAccount: (id: string, updatedData: Partial<Account>) => void;
   onDeleteAccount: (id: string) => void;
+  displayCurrency: Currency;
 }
 
 export function AccountsCardList({
   accounts,
   onEditAccount,
   onDeleteAccount,
+  displayCurrency,
 }: AccountsCardListProps) {
   return (
     <div className="block sm:hidden">
@@ -47,18 +49,25 @@ export function AccountsCardList({
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col items-end gap-1">
                     <div
                       className={`font-semibold ${account.isLiability ? "text-red-500" : ""}`}
                     >
                       {formatCurrency(
-                        account.balance,
-                        account.currency,
+                        account.convertedBalance !== undefined
+                          ? account.convertedBalance
+                          : account.balance,
+                        account.displayCurrency || account.currency,
                         account.isLiability,
                       )}
                       {account.isLiability ? " (debt)" : ""}
                     </div>
-                    <div className="flex items-center space-x-1">
+                    {account.currency !== displayCurrency && (
+                      <div className="text-sm text-muted-foreground">
+                        {formatCurrency(account.balance, account.currency)}
+                      </div>
+                    )}
+                    <div className="mt-1 flex items-center space-x-1">
                       <EditAccountDialog
                         account={account}
                         onEditAccount={onEditAccount}
@@ -74,6 +83,7 @@ export function AccountsCardList({
                   <div>
                     Created: {new Date(account.createdAt).toLocaleDateString()}
                   </div>
+                  <div>{account.currency}</div>
                 </div>
               </div>
             ))

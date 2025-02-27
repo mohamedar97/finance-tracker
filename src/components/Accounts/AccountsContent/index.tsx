@@ -8,7 +8,7 @@ import {
 import { AccountsFilter } from "./AccountsFilter";
 import { AccountsTable } from "./AccountsTable";
 import { AccountsCardList } from "./AccountsCardList";
-import { Account } from "@/lib/types";
+import { Account, Currency } from "@/lib/types";
 
 interface AccountsContentProps {
   accounts: Account[];
@@ -29,6 +29,7 @@ interface AccountsContentProps {
   totalAccounts: number;
   onEditAccount: (id: string, updatedData: Partial<Account>) => void;
   onDeleteAccount: (id: string) => void;
+  displayCurrency: Currency;
 }
 
 export function AccountsContent({
@@ -50,6 +51,7 @@ export function AccountsContent({
   totalAccounts,
   onEditAccount,
   onDeleteAccount,
+  displayCurrency,
 }: AccountsContentProps) {
   return (
     <Card>
@@ -83,11 +85,13 @@ export function AccountsContent({
           accounts={filteredAccounts}
           onEditAccount={onEditAccount}
           onDeleteAccount={onDeleteAccount}
+          displayCurrency={displayCurrency}
         />
         <AccountsCardList
           accounts={filteredAccounts}
           onEditAccount={onEditAccount}
           onDeleteAccount={onDeleteAccount}
+          displayCurrency={displayCurrency}
         />
       </CardContent>
     </Card>

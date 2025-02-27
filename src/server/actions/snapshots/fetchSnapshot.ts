@@ -64,5 +64,7 @@ export async function fetchSnapshot(
       Number(previousSnapshot.liquidAssets) +
       Number(previousSnapshot.savings) -
       Number(previousSnapshot.liabilities),
+    usdRate: Number(previousRates.usdRate),
+    goldRate: Number(previousRates.goldGrate),
   };
 }

@@ -12,8 +12,11 @@ import {
   TooltipProps,
 } from "recharts";
 import { Account, SnapshotDataPoint } from "@/lib/types";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { fetchSnapshotsInRange } from "@/server/actions/snapshots/fetchSnapshotsInRange";
+import { useCurrency } from "@/lib/contexts/CurrencyContext";
+import { convertCurrency } from "@/lib/utils";
+import { useDebounce } from "@/lib/hooks/useDebounce";
 
 // Define time range options
 const TIME_RANGES = [
@@ -84,6 +87,25 @@ const CustomTooltip = ({
   return null;
 };
 
+// Function to aggregate data points when there are too many
+const aggregateDataPoints = (data: SnapshotDataPoint[], maxPoints = 50) => {
+  if (data.length <= maxPoints) return data;
+
+  const result: SnapshotDataPoint[] = [];
+  const interval = Math.ceil(data.length / maxPoints);
+
+  for (let i = 0; i < data.length; i += interval) {
+    const chunk = data.slice(i, i + interval);
+    // Ensure we're not using undefined by using the first item as fallback
+    const aggregated = chunk[chunk.length - 1] || chunk[0];
+    if (aggregated) {
+      result.push(aggregated);
+    }
+  }
+
+  return result;
+};
+
 export function OverviewChart({
   accounts,
   snapshotData: initialSnapshotData,
@@ -91,11 +113,13 @@ export function OverviewChart({
   accounts: Account[];
   snapshotData: SnapshotDataPoint[];
 }) {
-  console.log(initialSnapshotData);
+  const { usdRate, goldRate, selectedCurrency } = useCurrency();
   // State for selected time range and metrics
   const [timeRange, setTimeRange] = useState<string>(
     TIME_RANGES.find((range) => range.default)?.value || "6m",
   );
+  // Debounce time range changes to prevent rapid API calls
+  const debouncedTimeRange = useDebounce(timeRange, 300);
 
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>(
     METRICS.filter((metric) => metric.default).map((metric) => metric.value),
@@ -106,68 +130,103 @@ export function OverviewChart({
     useState<SnapshotDataPoint[]>(initialSnapshotData);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Function to fetch data based on time range
-  const fetchDataForTimeRange = async (range: string) => {
-    try {
-      setIsLoading(true);
+  // Create a cache for data per time range
+  const [dataCache, setDataCache] = useState<
+    Record<string, SnapshotDataPoint[]>
+  >({});
 
-      // Calculate date range based on selected timeRange
-      const endDate = new Date();
-      let startDate = new Date();
+  // Memoize date calculations for each time range to avoid recalculations
+  const getDateRange = useCallback((range: string) => {
+    const endDate = new Date();
+    let startDate = new Date();
 
-      switch (range) {
-        case "1m":
-          startDate.setMonth(endDate.getMonth() - 1);
-          break;
-        case "3m":
-          startDate.setMonth(endDate.getMonth() - 3);
-          break;
-        case "6m":
-          startDate.setMonth(endDate.getMonth() - 6);
-          break;
-        case "ytd":
-          startDate = new Date(endDate.getFullYear(), 0, 1); // Jan 1 of current year
-          break;
-        case "1y":
-          startDate.setFullYear(endDate.getFullYear() - 1);
-          break;
-        case "all":
-          startDate = new Date(0); // Beginning of time (effectively)
-          break;
-        default:
-          startDate.setMonth(endDate.getMonth() - 6); // Default to 6 months
+    switch (range) {
+      case "1m":
+        startDate.setMonth(endDate.getMonth() - 1);
+        break;
+      case "3m":
+        startDate.setMonth(endDate.getMonth() - 3);
+        break;
+      case "6m":
+        startDate.setMonth(endDate.getMonth() - 6);
+        break;
+      case "ytd":
+        startDate = new Date(endDate.getFullYear(), 0, 1); // Jan 1 of current year
+        break;
+      case "1y":
+        startDate.setFullYear(endDate.getFullYear() - 1);
+        break;
+      case "all":
+        startDate = new Date(0); // Beginning of time (effectively)
+        break;
+      default:
+        startDate.setMonth(endDate.getMonth() - 6); // Default to 6 months
+    }
+
+    return { startDate, endDate };
+  }, []);
+
+  // Function to fetch data based on time range with caching
+  const fetchDataForTimeRange = useCallback(
+    async (range: string) => {
+      // Check cache first
+      if (dataCache[range]) {
+        setSnapshotData(dataCache[range]);
+        return;
       }
 
-      // Fetch new data with the calculated date range
-      const data = await fetchSnapshotsInRange(startDate, endDate);
-      setSnapshotData(data);
-    } catch (error) {
-      console.error("Error fetching snapshot data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      try {
+        setIsLoading(true);
+        const { startDate, endDate } = getDateRange(range);
+
+        // Fetch new data with the calculated date range
+        const data = await fetchSnapshotsInRange(startDate, endDate);
+
+        // Aggregate data if there are too many points
+        const processedData = aggregateDataPoints(data);
+
+        // Update cache and state
+        setDataCache((prev) => ({ ...prev, [range]: processedData }));
+        setSnapshotData(processedData);
+      } catch (error) {
+        console.error("Error fetching snapshot data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [dataCache, getDateRange],
+  );
+
+  // Effect to fetch data when debounced time range changes
+  useEffect(() => {
+    fetchDataForTimeRange(debouncedTimeRange);
+  }, [debouncedTimeRange, fetchDataForTimeRange]);
 
   // Handle time range change
   const handleTimeRangeChange = (newRange: string) => {
     setTimeRange(newRange);
-    fetchDataForTimeRange(newRange);
   };
 
-  // Process the real snapshot data for the chart
-  const chartData = useMemo(() => {
+  // Pre-convert currency data for all data points once, instead of during render
+  const processedData = useMemo(() => {
     // If no snapshot data available, return empty array
     if (!snapshotData || snapshotData.length === 0) {
       return [];
     }
 
+    // Filter out snapshots with zero rates to avoid division by zero or invalid data
+    const validSnapshots = snapshotData.filter(
+      (snapshot) =>
+        snapshot.metrics.usdRate > 0 && snapshot.metrics.goldRate > 0,
+    );
+
     // Process real snapshot data
-    return snapshotData.map((snapshot) => {
+    return validSnapshots.map((snapshot) => {
       // Format the date to show month name (e.g., "Jan", "Feb")
       const date = new Date(snapshot.date);
       const monthName = date.toLocaleString("default", { month: "short" });
       // If we have year data spanning multiple years, include the year in the label
-      const needsYear = snapshotData.some(
+      const needsYear = validSnapshots.some(
         (s) =>
           new Date(s.date).getFullYear() !==
           new Date(snapshot.date).getFullYear(),
@@ -179,18 +238,50 @@ export function OverviewChart({
       return {
         name: displayName,
         date: date.toISOString().split("T")[0], // Keep the full date for tooltip
-        netTotal: snapshot.metrics.netTotal,
-        liquidAssets: snapshot.metrics.liquidAssets,
-        savings: snapshot.metrics.savings,
-        liabilities: snapshot.metrics.liabilities,
-        totalAssets: snapshot.metrics.totalAssets,
+        netTotal: convertCurrency(
+          snapshot.metrics.netTotal,
+          "EGP", // Base currency used in calculations
+          selectedCurrency,
+          snapshot.metrics.usdRate,
+          snapshot.metrics.goldRate,
+        ),
+        liquidAssets: convertCurrency(
+          snapshot.metrics.liquidAssets,
+          "EGP", // Base currency used in calculations
+          selectedCurrency,
+          snapshot.metrics.usdRate,
+          snapshot.metrics.goldRate,
+        ),
+        savings: convertCurrency(
+          snapshot.metrics.savings,
+          "EGP", // Base currency used in calculations
+          selectedCurrency,
+          snapshot.metrics.usdRate,
+          snapshot.metrics.goldRate,
+        ),
+        liabilities: convertCurrency(
+          snapshot.metrics.liabilities,
+          "EGP", // Base currency used in calculations
+          selectedCurrency,
+          snapshot.metrics.usdRate,
+          snapshot.metrics.goldRate,
+        ),
+        totalAssets: convertCurrency(
+          snapshot.metrics.totalAssets,
+          "EGP", // Base currency used in calculations
+          selectedCurrency,
+          snapshot.metrics.usdRate,
+          snapshot.metrics.goldRate,
+        ),
       };
     });
-  }, [snapshotData]);
+  }, [snapshotData, selectedCurrency, usdRate, goldRate]);
+
+  console.log(processedData);
 
   // Calculate Y-axis domain with padding for better visualization
   const yAxisDomain = useMemo(() => {
-    if (chartData.length === 0 || selectedMetrics.length === 0) {
+    if (processedData.length === 0 || selectedMetrics.length === 0) {
       return ["auto", "auto"];
     }
 
@@ -198,7 +289,7 @@ export function OverviewChart({
     let minValue = Infinity;
     let maxValue = -Infinity;
 
-    chartData.forEach((dataPoint) => {
+    processedData.forEach((dataPoint) => {
       selectedMetrics.forEach((metric) => {
         const value = dataPoint[metric as keyof typeof dataPoint];
         if (typeof value === "number") {
@@ -210,28 +301,65 @@ export function OverviewChart({
 
     // If we have valid min/max, add padding
     if (minValue !== Infinity && maxValue !== -Infinity) {
-      const paddingFactor = 0.15; // 15% padding
+      const paddingFactor = 0.1; // 10% padding (reduced from 15%)
       const range = maxValue - minValue;
 
-      // Ensure min is at or below 0 for financial charts if close
-      const adjustedMin =
-        minValue > 0 && minValue < range * 0.2
-          ? 0
-          : minValue - range * paddingFactor;
-      // Add padding to the top
-      const adjustedMax = maxValue + range * paddingFactor;
+      // Special handling for ranges that include both positive and negative values
+      if (minValue < 0 && maxValue > 0) {
+        // For mixed ranges, add padding proportionally
+        return [
+          minValue - Math.abs(minValue) * paddingFactor,
+          maxValue + Math.abs(maxValue) * paddingFactor,
+        ];
+      }
 
-      return [adjustedMin, adjustedMax];
+      // If all values are positive, ensure min starts at 0 unless values are far from zero
+      if (minValue >= 0) {
+        const adjustedMin =
+          minValue < range * 0.2 ? 0 : minValue - range * paddingFactor;
+        const adjustedMax = maxValue + range * paddingFactor;
+        return [adjustedMin, adjustedMax];
+      }
+
+      // If all values are negative, ensure max ends at 0 unless values are far from zero
+      if (maxValue <= 0) {
+        const adjustedMin = minValue - range * paddingFactor;
+        const adjustedMax =
+          maxValue > -range * 0.2 ? 0 : maxValue + range * paddingFactor;
+        return [adjustedMin, adjustedMax];
+      }
     }
 
     return ["auto", "auto"];
-  }, [chartData, selectedMetrics]);
+  }, [processedData, selectedMetrics]);
+
+  // Format large numbers for Y-axis
+  const formatYAxisTick = (value: number) => {
+    // Handle zero separately
+    if (value === 0) return `${currencySymbol}0`;
+
+    // Format based on magnitude
+    if (Math.abs(value) >= 1_000_000) {
+      return `${currencySymbol}${(value / 1_000_000).toLocaleString("en-US", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 1,
+      })}M`;
+    } else if (Math.abs(value) >= 1_000) {
+      return `${currencySymbol}${(value / 1_000).toLocaleString("en-US", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 1,
+      })}K`;
+    } else {
+      return `${currencySymbol}${value.toLocaleString("en-US", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      })}`;
+    }
+  };
 
   // Default currency (use the first account's currency or USD as fallback)
-  const currency =
-    accounts && accounts.length > 0 ? (accounts[0]?.currency ?? "USD") : "USD";
   const currencySymbol =
-    currency === "USD" ? "$" : currency === "EGP" ? "E£" : "$";
+    selectedCurrency === "USD" ? "$" : selectedCurrency === "EGP" ? "E£" : "G";
 
   // Helper function to get color for a metric
   const getMetricColor = (metricValue: string) => {
@@ -266,7 +394,7 @@ export function OverviewChart({
   }
 
   // If no data is available
-  if (chartData.length === 0) {
+  if (processedData.length === 0) {
     return (
       <div className="flex h-[250px] items-center justify-center text-center">
         <p className="text-muted-foreground">
@@ -326,7 +454,7 @@ export function OverviewChart({
       <div className="h-[250px] sm:h-[300px] md:h-[350px]">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
-            data={chartData}
+            data={processedData}
             margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
@@ -342,9 +470,12 @@ export function OverviewChart({
               fontSize={12}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(value) => `${currencySymbol}${value}`}
+              tickFormatter={formatYAxisTick}
               domain={yAxisDomain}
               padding={{ top: 10, bottom: 10 }}
+              width={60}
+              tickCount={5}
+              allowDecimals={false}
             />
             <Tooltip
               content={<CustomTooltip currencySymbol={currencySymbol} />}

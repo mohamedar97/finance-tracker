@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Account } from "@/lib/types";
+import { Account, Currency } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 import { EditAccountDialog } from "../AccountForm/EditAccountDialog";
 import { DeleteAccountDialog } from "../AccountForm/DeleteAccountDialog";
@@ -16,12 +16,14 @@ interface AccountsTableProps {
   accounts: Account[];
   onEditAccount: (id: string, updatedData: Partial<Account>) => void;
   onDeleteAccount: (id: string) => void;
+  displayCurrency: Currency;
 }
 
 export function AccountsTable({
   accounts,
   onEditAccount,
   onDeleteAccount,
+  displayCurrency,
 }: AccountsTableProps) {
   return (
     <div className="hidden sm:block">
@@ -29,9 +31,14 @@ export function AccountsTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[25%]">Account Name</TableHead>
+              <TableHead className="w-[20%]">Account Name</TableHead>
               <TableHead className="w-[10%]">Type</TableHead>
-              <TableHead className="w-[15%] text-right">Balance</TableHead>
+              <TableHead className="w-[15%] text-right">
+                Balance ({displayCurrency})
+              </TableHead>
+              <TableHead className="w-[15%] text-right">
+                Original Amount
+              </TableHead>
               <TableHead className="w-[10%]">Currency</TableHead>
               <TableHead className="w-[10%]">Status</TableHead>
               <TableHead className="w-[10%]">Created</TableHead>
@@ -59,11 +66,24 @@ export function AccountsTable({
                     }`}
                   >
                     {formatCurrency(
-                      account.balance,
-                      account.currency,
+                      account.convertedBalance !== undefined
+                        ? account.convertedBalance
+                        : account.balance,
+                      account.displayCurrency || account.currency,
                       account.isLiability,
                     )}
                     {account.isLiability ? " (debt)" : ""}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {account.currency !== displayCurrency ? (
+                      formatCurrency(
+                        account.balance,
+                        account.currency,
+                        account.isLiability,
+                      )
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
                   </TableCell>
                   <TableCell>{account.currency}</TableCell>
                   <TableCell>

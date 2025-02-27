@@ -4,8 +4,8 @@ import { Inter } from "next/font/google";
 import "@/styles/globals.css";
 import { Header } from "@/components/Header/index";
 import { Toaster } from "sonner";
-import { FXRatesProvider } from "@/components/Header/FXRatesProvider";
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import { FXRatesProvider } from "@/lib/contexts/FXRatesProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 

@@ -1,9 +1,12 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AccountsHeader } from "./AccountsHeader";
 import { AccountsContent } from "./AccountsContent";
 import { AccountsSummary } from "./AccountsSummary";
 import { Account, NewAccount } from "@/lib/types";
+import { useCurrency } from "@/lib/contexts/CurrencyContext";
+import { convertCurrency } from "@/lib/utils";
+import React from "react";
 
 export default function Accounts({
   initialAccounts,
@@ -18,6 +21,21 @@ export default function Accounts({
     "Assets & Liabilities",
   );
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+
+  // Get selected currency and rates from CurrencyContext
+  const { usdRate, goldRate, selectedCurrency: globalCurrency } = useCurrency();
+
+  // Log when currency values change
+  useEffect(() => {
+    console.log(
+      "Currency changed:",
+      globalCurrency,
+      "USD Rate:",
+      usdRate,
+      "Gold Rate:",
+      goldRate,
+    );
+  }, [globalCurrency, usdRate, goldRate]);
 
   // Extract all unique account types for filter
   const accountTypes = [
@@ -62,6 +80,31 @@ export default function Accounts({
     return matchesSearch && matchesType && matchesCurrency && matchesLiability;
   });
 
+  // Convert account balances to the selected global currency
+  const convertedAccounts = filteredAccounts.map((account) => {
+    // Deep copy the account to avoid modifying the original
+    const convertedAccount = { ...account };
+
+    // Only convert if the account currency is different from the selected currency
+    if (account.currency !== globalCurrency) {
+      // Convert the balance to the selected currency
+      convertedAccount.convertedBalance = convertCurrency(
+        account.balance,
+        account.currency,
+        globalCurrency,
+        usdRate,
+        goldRate,
+      );
+      convertedAccount.displayCurrency = globalCurrency;
+    } else {
+      // If the account currency is the same as the selected one, use the original balance
+      convertedAccount.convertedBalance = Number(account.balance);
+      convertedAccount.displayCurrency = account.currency;
+    }
+
+    return convertedAccount;
+  });
+
   // Handle add account
   const onAddAccount = (accountData: Account) => {
     // Add the new account to the accounts state
@@ -98,9 +141,11 @@ export default function Accounts({
 
       <div className="grid gap-4">
         <AccountsSummary
-          accounts={accounts}
+          accounts={filteredAccounts}
           activeFiltersCount={activeFiltersCount}
           totalFilteredAccounts={filteredAccounts.length}
+          usdRate={usdRate}
+          goldRate={goldRate}
         />
         <AccountsContent
           accounts={accounts}
@@ -117,10 +162,11 @@ export default function Accounts({
           accountTypes={accountTypes}
           currencyTypes={currencyTypes}
           activeFiltersCount={activeFiltersCount}
-          filteredAccounts={filteredAccounts}
+          filteredAccounts={convertedAccounts}
           totalAccounts={accounts.length}
           onEditAccount={handleEditAccount}
           onDeleteAccount={handleDeleteAccount}
+          displayCurrency={globalCurrency}
         />
       </div>
     </div>

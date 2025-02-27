@@ -10,5 +10,7 @@ export default async function AccountsPage() {
     throw new Error(accountsRequest.error);
   }
   const accounts = accountsRequest.accounts as Account[];
+
+  // Wrap with FXRatesProvider to ensure currency context is available
   return <Accounts initialAccounts={accounts} />;
 }

@@ -21,8 +21,6 @@ export default async function HomePage() {
   // Fetch snapshots data for the chart (last 6 months by default)
   const snapshotData = await fetchSnapshotsInRange();
 
-  console.log("snapshotData", snapshotData);
-
   if (!accountsSuccess) {
     console.error("Failed to fetch accounts:", accountsError);
   }

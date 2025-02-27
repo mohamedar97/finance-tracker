@@ -7,7 +7,11 @@ import {
 } from "../server/db/schema";
 
 // Note: Account.id is a UUID string
-export type Account = InferSelectModel<typeof accounts>;
+export type Account = InferSelectModel<typeof accounts> & {
+  // Optional fields for currency conversion display
+  convertedBalance?: number;
+  displayCurrency?: Currency;
+};
 export type NewAccount = InferInsertModel<typeof accounts>;
 
 // Transaction types
@@ -47,9 +51,22 @@ export interface HistoricalMetrics {
   liabilities: number;
   totalAssets: number;
   netTotal: number;
+  usdRate: number;
+  goldRate: number;
 }
 
 export interface SnapshotDataPoint {
   date: Date;
   metrics: HistoricalMetrics;
+}
+
+export interface CurrencyData {
+  usdRate: number;
+  goldRate: number;
+  timestamp: Date;
+  formattedTimestamp: string;
+  selectedCurrency: Currency;
+  setSelectedCurrency: (currency: Currency) => void;
+  refreshRates: () => Promise<void>;
+  isRefreshing: boolean;
 }

@@ -89,3 +89,47 @@ export const getStringFromBuffer = (buffer: ArrayBuffer) =>
   Array.from(new Uint8Array(buffer))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
+
+/**
+ * Convert amount from source currency to target currency using the provided rates
+ * @param amount The amount to convert
+ * @param fromCurrency The source currency
+ * @param toCurrency The target currency
+ * @param usdRate The USD to EGP exchange rate
+ * @param goldRate The Gold to EGP exchange rate (per gram)
+ * @returns The converted amount
+ */
+export function convertCurrency(
+  amount: number | string,
+  fromCurrency: string,
+  toCurrency: string,
+  usdRate: number,
+  goldRate: number,
+): number {
+  // Parse amount to number if it's a string
+  const numericAmount =
+    typeof amount === "string" ? parseFloat(amount) : amount;
+
+  // First convert to EGP (base currency)
+  let amountInEGP = 0;
+
+  if (fromCurrency === "EGP") {
+    amountInEGP = numericAmount;
+  } else if (fromCurrency === "USD") {
+    amountInEGP = numericAmount * usdRate;
+  } else if (fromCurrency === "Gold") {
+    amountInEGP = numericAmount * goldRate;
+  }
+
+  // Then convert to target currency
+  if (toCurrency === "EGP") {
+    return amountInEGP;
+  } else if (toCurrency === "USD") {
+    return amountInEGP / usdRate;
+  } else if (toCurrency === "Gold") {
+    return amountInEGP / goldRate;
+  }
+
+  // Fallback to original amount if currencies not recognized
+  return numericAmount;
+}

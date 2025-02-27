@@ -60,12 +60,24 @@ export async function fetchSnapshotsInRange(
   for (const snapshot of rangeSnapshots) {
     // Since metrics are now stored directly in the snapshots table,
     // we can use them without additional queries
-
     const liquidAssets = Number(snapshot.liquidAssets);
     const savings = Number(snapshot.savings);
     const liabilities = Number(snapshot.liabilities);
     const totalAssets = liquidAssets + savings;
     const netTotal = totalAssets - liabilities;
+
+    // Fetch currency rates if they exist
+    let usdRate = 0;
+    let goldRate = 0;
+
+    const rateData = await db.query.currencyRates.findFirst({
+      where: eq(currencyRates.id, snapshot.currencyRateId),
+    });
+
+    if (rateData) {
+      usdRate = Number(rateData.usdRate);
+      goldRate = Number(rateData.goldGrate);
+    }
 
     // Add data point to results
     dataPoints.push({
@@ -76,6 +88,8 @@ export async function fetchSnapshotsInRange(
         liabilities,
         totalAssets,
         netTotal,
+        usdRate,
+        goldRate,
       },
     });
   }
