@@ -30,10 +30,10 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetricsData> {
     throw new Error("Currency rates not available");
   }
 
-  // Calculate current net worth in EGP (base currency)
-  let liquidAssets = 0;
-  let savings = 0;
-  let liabilities = 0;
+  // Calculate current metrics in EGP (base currency)
+  let totalAssets = 0;
+  let totalLiabilities = 0;
+  let savingsAssets = 0;
 
   for (const account of userAccounts) {
     // Convert all currencies to EGP for consistent calculations
@@ -49,21 +49,22 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetricsData> {
     }
 
     if (account.isLiability) {
-      liabilities += balanceInEGP;
-    } else if (account.type === "Savings") {
-      savings += balanceInEGP;
+      totalLiabilities += balanceInEGP;
     } else {
-      liquidAssets += balanceInEGP;
+      totalAssets += balanceInEGP;
+      if (account.type === "Savings") {
+        savingsAssets += balanceInEGP;
+      }
     }
   }
 
-  const totalAssets = liquidAssets + savings;
-  const netTotal = totalAssets - liabilities;
+  const liquidAssets = totalAssets - savingsAssets;
+  const netWorth = totalAssets - totalLiabilities;
 
   // Default percentage changes if no previous data
   let liquidChange = 0;
   let savingsChange = 0;
-  let totalChange = 0;
+  let netWorthChange = 0;
 
   // Get historical snapshot data from 30 days ago
   const historicalMetrics = await fetchSnapshot(30);
@@ -88,13 +89,15 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetricsData> {
 
     if (previousSavings > 0) {
       savingsChange = parseFloat(
-        (((savings - previousSavings) / previousSavings) * 100).toFixed(1),
+        (((savingsAssets - previousSavings) / previousSavings) * 100).toFixed(
+          1,
+        ),
       );
     }
 
     if (previousNetTotal > 0) {
-      totalChange = parseFloat(
-        (((netTotal - previousNetTotal) / previousNetTotal) * 100).toFixed(1),
+      netWorthChange = parseFloat(
+        (((netWorth - previousNetTotal) / previousNetTotal) * 100).toFixed(1),
       );
     }
   }
@@ -105,12 +108,12 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetricsData> {
       changePercentage: liquidChange,
     },
     netSavings: {
-      value: parseFloat(savings.toFixed(2)),
+      value: parseFloat(savingsAssets.toFixed(2)),
       changePercentage: savingsChange,
     },
     netTotal: {
-      value: parseFloat(netTotal.toFixed(2)),
-      changePercentage: totalChange,
+      value: parseFloat(netWorth.toFixed(2)),
+      changePercentage: netWorthChange,
     },
   };
 }

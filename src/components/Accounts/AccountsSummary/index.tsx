@@ -5,23 +5,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { calculateFinancialMetrics } from "@/lib/financialCalculations";
+import { Account } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
 interface AccountsSummaryProps {
-  totalAssets: number;
-  totalLiabilities: number;
-  netWorth: number;
   activeFiltersCount: number;
   totalFilteredAccounts: number;
+  accounts: Account[];
 }
 
 export function AccountsSummary({
-  totalAssets,
-  totalLiabilities,
-  netWorth,
   activeFiltersCount,
   totalFilteredAccounts,
+  accounts,
 }: AccountsSummaryProps) {
+  const { totalAssets, totalLiabilities, netWorth, defaultCurrency } =
+    calculateFinancialMetrics(accounts);
+
   return (
     <Card>
       <CardHeader>
@@ -37,13 +38,13 @@ export function AccountsSummary({
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">Total Assets</p>
             <p className="text-2xl font-bold">
-              {formatCurrency(totalAssets, "USD")}
+              {formatCurrency(totalAssets, defaultCurrency)}
             </p>
           </div>
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">Total Liabilities</p>
             <p className="text-2xl font-bold text-red-500">
-              {formatCurrency(totalLiabilities, "USD", true)}
+              {formatCurrency(totalLiabilities, defaultCurrency, true)}
             </p>
           </div>
           <div className="space-y-2">
@@ -53,7 +54,7 @@ export function AccountsSummary({
                 netWorth < 0 ? "text-red-500" : ""
               }`}
             >
-              {formatCurrency(netWorth, "USD", netWorth < 0)}
+              {formatCurrency(netWorth, defaultCurrency, netWorth < 0)}
             </p>
             <p className="text-xs text-muted-foreground">
               Last Updated: {new Date().toLocaleDateString()}

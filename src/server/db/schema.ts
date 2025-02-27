@@ -17,6 +17,10 @@ export const createTable = pgTableCreator((name) => `finance-tracker_${name}`);
 // Define enums
 export const currencyEnum = pgEnum("currency_type", ["EGP", "USD", "Gold"]);
 export const accountTypeEnum = pgEnum("account_type", ["Savings", "Current"]);
+export const transactionTypeEnum = pgEnum("transaction_type", [
+  "Income",
+  "Expense",
+]);
 
 // Users Table
 export const users = createTable("users", {
@@ -55,6 +59,9 @@ export const transactions = createTable("transactions", {
   currencyRateId: integer("currency_rate_id").references(
     () => currencyRates.id,
   ),
+  payee: varchar("payee", { length: 50 }),
+  currency: currencyEnum("currency").notNull(),
+  transactionType: transactionTypeEnum("transaction_type").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   description: text("description"),
   category: varchar("category", { length: 50 }),

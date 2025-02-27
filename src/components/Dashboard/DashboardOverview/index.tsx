@@ -8,9 +8,15 @@ import {
 import { OverviewChart } from "./overviewChart";
 import { DashboardMetrics } from "./DashboardMetrics";
 import { RecentTransactions } from "./recentTransactions";
-import { Account } from "@/lib/types";
+import { Account, Transaction } from "@/lib/types";
 
-export function DashboardOverviewTab({ accounts }: { accounts: Account[] }) {
+export function DashboardOverviewTab({
+  accounts,
+  transactions,
+}: {
+  accounts: Account[];
+  transactions: Transaction[];
+}) {
   return (
     <div className="space-y-4 p-2 sm:p-4">
       <DashboardMetrics accounts={accounts} />
@@ -26,12 +32,9 @@ export function DashboardOverviewTab({ accounts }: { accounts: Account[] }) {
         <Card className="col-span-1 md:col-span-3">
           <CardHeader>
             <CardTitle>Recent Transactions</CardTitle>
-            <CardDescription>
-              You made 265 transactions this month.
-            </CardDescription>
           </CardHeader>
           <CardContent>
-            <RecentTransactions />
+            <RecentTransactions transactions={transactions} />
           </CardContent>
         </Card>
       </div>

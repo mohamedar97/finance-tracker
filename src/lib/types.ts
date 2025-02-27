@@ -1,9 +1,18 @@
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
-import { accounts, currencyEnum, accountTypeEnum } from "../server/db/schema";
+import {
+  accounts,
+  currencyEnum,
+  accountTypeEnum,
+  transactions,
+} from "../server/db/schema";
 
 // Note: Account.id is a UUID string
 export type Account = InferSelectModel<typeof accounts>;
 export type NewAccount = InferInsertModel<typeof accounts>;
+
+// Transaction types
+export type Transaction = InferSelectModel<typeof transactions>;
+export type NewTransaction = InferInsertModel<typeof transactions>;
 
 export interface AccountFormData {
   name: string;

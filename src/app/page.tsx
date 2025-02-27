@@ -1,13 +1,31 @@
 import Dashboard from "@/components/Dashboard";
 import { getAccounts } from "@/server/actions/accounts/getAccounts";
+import { getTransactions } from "@/server/actions/transactions/getTransactions";
 
 export default async function HomePage() {
   // Fetch accounts data on the server
-  const { success, accounts, error } = await getAccounts();
+  const {
+    success: accountsSuccess,
+    accounts,
+    error: accountsError,
+  } = await getAccounts();
 
-  if (!success) {
-    console.error("Failed to fetch accounts:", error);
+  // Fetch transactions data on the server
+  const {
+    success: transactionsSuccess,
+    transactions,
+    error: transactionsError,
+  } = await getTransactions();
+
+  if (!accountsSuccess) {
+    console.error("Failed to fetch accounts:", accountsError);
   }
 
-  return <Dashboard accounts={accounts || []} />;
+  if (!transactionsSuccess) {
+    console.error("Failed to fetch transactions:", transactionsError);
+  }
+
+  return (
+    <Dashboard accounts={accounts || []} transactions={transactions || []} />
+  );
 }

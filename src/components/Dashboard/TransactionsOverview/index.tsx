@@ -22,69 +22,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { SlidersHorizontal, X } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import { formatCurrency } from "@/lib/utils";
+import { Transaction } from "@/lib/types";
 
-interface Transaction {
-  id: string;
-  date: string;
-  description: string;
-  amount: number;
-  type: "income" | "expense";
-  category: string;
-  account: string;
-}
-
-// Mock data - replace with real data later
-const transactions: Transaction[] = [
-  {
-    id: "1",
-    date: "2024-02-22",
-    description: "Salary Deposit",
-    amount: 5000.0,
-    type: "income",
-    category: "Salary",
-    account: "Main Checking",
-  },
-  {
-    id: "2",
-    date: "2024-02-21",
-    description: "Grocery Shopping",
-    amount: -150.75,
-    type: "expense",
-    category: "Groceries",
-    account: "Main Checking",
-  },
-  {
-    id: "3",
-    date: "2024-02-20",
-    description: "Investment Dividend",
-    amount: 250.5,
-    type: "income",
-    category: "Investment",
-    account: "Investment Portfolio",
-  },
-  {
-    id: "4",
-    date: "2024-02-19",
-    description: "Restaurant",
-    amount: -85.2,
-    type: "expense",
-    category: "Dining",
-    account: "Main Checking",
-  },
-  {
-    id: "5",
-    date: "2024-02-18",
-    description: "Utilities Bill",
-    amount: -200.0,
-    type: "expense",
-    category: "Utilities",
-    account: "Main Checking",
-  },
-];
-
+// Mock categories and accounts - these should also come from the DB eventually
 const categories = [
   "All",
   "Salary",
@@ -100,7 +43,11 @@ const accounts = [
   "Savings Account",
 ];
 
-export function TransactionsOverview() {
+export function TransactionsOverview({
+  transactions,
+}: {
+  transactions: Transaction[];
+}) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedAccount, setSelectedAccount] = useState("All");
@@ -108,12 +55,13 @@ export function TransactionsOverview() {
 
   const filteredTransactions = transactions.filter((transaction) => {
     const matchesSearch = transaction.description
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
+      ? transaction.description.toLowerCase().includes(searchTerm.toLowerCase())
+      : true;
     const matchesCategory =
-      selectedCategory === "All" || transaction.category === selectedCategory;
+      selectedCategory === "All" ||
+      (transaction.category && transaction.category === selectedCategory);
     const matchesAccount =
-      selectedAccount === "All" || transaction.account === selectedAccount;
+      selectedAccount === "All" || transaction.accountId === selectedAccount;
     return matchesSearch && matchesCategory && matchesAccount;
   });
 
@@ -121,6 +69,16 @@ export function TransactionsOverview() {
     selectedCategory !== "All" ? 1 : 0,
     selectedAccount !== "All" ? 1 : 0,
   ].reduce((a, b) => a + b, 0);
+
+  if (!transactions || transactions.length === 0) {
+    return (
+      <div className="flex h-[200px] items-center justify-center text-center">
+        <p className="text-muted-foreground">
+          No transactions found. Add a transaction to get started.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -231,27 +189,29 @@ export function TransactionsOverview() {
                 className="space-y-2 rounded-lg border p-4"
               >
                 <div className="flex items-start justify-between">
-                  <div className="font-medium">{transaction.description}</div>
+                  <div className="font-medium">
+                    {transaction.description || "Unnamed Transaction"}
+                  </div>
                   <div
                     className={`font-semibold ${
-                      transaction.type === "income"
+                      transaction.transactionType === "Income"
                         ? "text-green-600"
                         : "text-red-600"
                     }`}
                   >
                     {formatCurrency(
-                      transaction.amount,
-                      "USD",
-                      transaction.type === "expense",
+                      Number(transaction.amount),
+                      transaction.currency,
+                      transaction.transactionType === "Expense",
                     )}
                   </div>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {new Date(transaction.date).toLocaleDateString()}
+                  {new Date(transaction.transactionDate).toLocaleDateString()}
                 </div>
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <div>{transaction.category}</div>
-                  <div>{transaction.account}</div>
+                  <div>{transaction.category || "Uncategorized"}</div>
+                  <div>{transaction.accountId}</div>
                 </div>
               </div>
             ))}
@@ -268,7 +228,7 @@ export function TransactionsOverview() {
                 <TableHead className="whitespace-nowrap">Date</TableHead>
                 <TableHead className="whitespace-nowrap">Description</TableHead>
                 <TableHead className="whitespace-nowrap">Category</TableHead>
-                <TableHead className="whitespace-nowrap">Account</TableHead>
+                <TableHead className="whitespace-nowrap">Account ID</TableHead>
                 <TableHead className="whitespace-nowrap text-right">
                   Amount
                 </TableHead>
@@ -278,28 +238,28 @@ export function TransactionsOverview() {
               {filteredTransactions.map((transaction) => (
                 <TableRow key={transaction.id}>
                   <TableCell className="whitespace-nowrap">
-                    {new Date(transaction.date).toLocaleDateString()}
+                    {new Date(transaction.transactionDate).toLocaleDateString()}
                   </TableCell>
                   <TableCell className="max-w-[200px] truncate">
-                    {transaction.description}
+                    {transaction.description || "Unnamed Transaction"}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
-                    {transaction.category}
+                    {transaction.category || "Uncategorized"}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
-                    {transaction.account}
+                    {transaction.accountId}
                   </TableCell>
                   <TableCell
                     className={`whitespace-nowrap text-right ${
-                      transaction.type === "income"
+                      transaction.transactionType === "Income"
                         ? "text-green-600"
                         : "text-red-600"
                     }`}
                   >
                     {formatCurrency(
-                      transaction.amount,
+                      Number(transaction.amount),
                       "USD",
-                      transaction.type === "expense",
+                      transaction.transactionType === "Expense",
                     )}
                   </TableCell>
                 </TableRow>

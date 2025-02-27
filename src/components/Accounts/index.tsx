@@ -62,20 +62,6 @@ export default function Accounts({
     return matchesSearch && matchesType && matchesCurrency && matchesLiability;
   });
 
-  // Calculate summary statistics
-  const totalAssets = filteredAccounts
-    .filter((account) => !account.isLiability)
-    .reduce((sum, account) => sum + parseFloat(account.balance.toString()), 0);
-
-  const totalLiabilities = filteredAccounts
-    .filter((account) => account.isLiability)
-    .reduce(
-      (sum, account) => sum + Math.abs(parseFloat(account.balance.toString())),
-      0,
-    );
-
-  const netWorth = totalAssets - totalLiabilities;
-
   // Handle add account
   const onAddAccount = (accountData: Account) => {
     // Add the new account to the accounts state
@@ -112,9 +98,7 @@ export default function Accounts({
 
       <div className="grid gap-4">
         <AccountsSummary
-          totalAssets={totalAssets}
-          totalLiabilities={totalLiabilities}
-          netWorth={netWorth}
+          accounts={accounts}
           activeFiltersCount={activeFiltersCount}
           totalFilteredAccounts={filteredAccounts.length}
         />

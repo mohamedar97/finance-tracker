@@ -6,41 +6,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Transaction } from "@/lib/types";
+import { formatCurrency } from "@/lib/utils";
 
-const transactions = [
-  {
-    id: "1",
-    payee: "Grocery Store",
-    amount: -85.5,
-    date: "2023-06-15",
-  },
-  {
-    id: "2",
-    payee: "Salary Deposit",
-    amount: 3000.0,
-    date: "2023-06-01",
-  },
-  {
-    id: "3",
-    payee: "Electric Bill",
-    amount: -120.75,
-    date: "2023-06-10",
-  },
-  {
-    id: "4",
-    payee: "Restaurant",
-    amount: -45.0,
-    date: "2023-06-18",
-  },
-  {
-    id: "5",
-    payee: "Gas Station",
-    amount: -50.25,
-    date: "2023-06-20",
-  },
-];
-
-export function RecentTransactions() {
+export function RecentTransactions({
+  transactions,
+}: {
+  transactions: Transaction[];
+}) {
+  if (!transactions || transactions.length === 0) {
+    return (
+      <div className="flex h-[200px] items-center justify-center text-center">
+        <p className="text-muted-foreground">
+          No transactions found. Add a transaction to get started.
+        </p>
+      </div>
+    );
+  }
   return (
     <div className="h-[350px] overflow-auto">
       <Table>
@@ -57,13 +39,19 @@ export function RecentTransactions() {
               <TableCell className="font-medium">{transaction.payee}</TableCell>
               <TableCell
                 className={`${
-                  transaction.amount < 0 ? "text-red-500" : "text-green-500"
+                  transaction.transactionType === "Expense"
+                    ? "text-red-500"
+                    : "text-green-500"
                 } tabular-nums`}
               >
-                ${Math.abs(transaction.amount).toFixed(2)}
+                {formatCurrency(
+                  Number(transaction.amount),
+                  transaction.currency,
+                  transaction.transactionType === "Expense",
+                )}
               </TableCell>
               <TableCell className="tabular-nums">
-                {new Date(transaction.date).toLocaleDateString()}
+                {new Date(transaction.transactionDate).toLocaleDateString()}
               </TableCell>
             </TableRow>
           ))}
