@@ -10,24 +10,40 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, Plus } from "lucide-react";
 import { AccountForm } from "./AccountForm";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { createAccount } from "@/server/actions/accounts/createAccount";
 import { Account, AccountFormData } from "@/lib/types";
+
 interface CreateAccountDialogProps {
   onAddAccount: (accountData: Account) => void;
+  onCancel?: () => void;
+  openState?: boolean;
 }
 
 export function CreateAccountDialog({
   onAddAccount,
+  onCancel,
+  openState,
 }: CreateAccountDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(openState || false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Update open state when openState prop changes
+  useEffect(() => {
+    if (openState !== undefined) {
+      setOpen(openState);
+    }
+  }, [openState]);
 
   const handleOpenChange = (newOpen: boolean) => {
     // Prevent closing the dialog while submitting
     if (isSubmitting && !newOpen) return;
     setOpen(newOpen);
+    // Call onCancel if provided and dialog is closing
+    if (!newOpen && onCancel && !isSubmitting) {
+      onCancel();
+    }
   };
 
   const handleSubmit = async (data: AccountFormData) => {
@@ -67,14 +83,19 @@ export function CreateAccountDialog({
   const handleCancel = () => {
     // Close the dialog
     setOpen(false);
+    // Call onCancel if provided
+    if (onCancel) {
+      onCancel();
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Account
+        <Button className="flex-1 justify-center sm:flex-auto" size="sm">
+          <Plus className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Add Account</span>
+          <span className="sm:hidden">Add</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto p-4 sm:max-w-[425px] md:p-6">

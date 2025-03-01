@@ -12,6 +12,7 @@ import {
   LogIn,
   UserPlus,
   LogOut,
+  Clock,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -89,16 +90,16 @@ export function Sidebar({ className }: React.HTMLAttributes<HTMLDivElement>) {
                   Transactions
                 </Button>
               </Link>
-              <Link href="/analytics" onClick={handleLinkClick}>
+              <Link href="/history" onClick={handleLinkClick}>
                 <Button
-                  variant={pathname === "/analytics" ? "secondary" : "ghost"}
+                  variant={pathname === "/history" ? "secondary" : "ghost"}
                   className="w-full justify-start"
                 >
-                  <PieChart className="mr-2 h-4 w-4" />
-                  Analytics
+                  <Clock className="mr-2 h-4 w-4" />
+                  History
                 </Button>
               </Link>
-              <Link href="/upload" onClick={handleLinkClick}>
+              {/* <Link href="/upload" onClick={handleLinkClick}>
                 <Button
                   variant={pathname === "/upload" ? "secondary" : "ghost"}
                   className="w-full justify-start"
@@ -106,30 +107,10 @@ export function Sidebar({ className }: React.HTMLAttributes<HTMLDivElement>) {
                   <Upload className="mr-2 h-4 w-4" />
                   Upload Statement
                 </Button>
-              </Link>
+              </Link> */}
             </div>
           </div>
         )}
-
-        {isAuthenticated && (
-          <div className="px-3 py-2">
-            <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
-              Settings
-            </h2>
-            <div className="space-y-1">
-              <Link href="/settings" onClick={handleLinkClick}>
-                <Button
-                  variant={pathname === "/settings" ? "secondary" : "ghost"}
-                  className="w-full justify-start"
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  Preferences
-                </Button>
-              </Link>
-            </div>
-          </div>
-        )}
-
         {isAuthenticated ? (
           <div className="px-3 py-2">
             <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">

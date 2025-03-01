@@ -7,6 +7,18 @@ import { Account, NewAccount } from "@/lib/types";
 import { useCurrency } from "@/lib/contexts/CurrencyContext";
 import { convertCurrency } from "@/lib/utils";
 import React from "react";
+import { Button } from "../ui/button";
+import { ArrowLeftRight, Plus, Save, MoreHorizontal } from "lucide-react";
+import { TransferDialog } from "./TransferDialog";
+import { CreateAccountDialog } from "./AccountForm/CreateAccountDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { createSnapshot } from "@/server/actions/snapshots/createSnapshot";
+import { toast } from "sonner";
 
 export default function Accounts({
   initialAccounts,
@@ -21,21 +33,12 @@ export default function Accounts({
     "Assets & Liabilities",
   );
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [showTransferDialog, setShowTransferDialog] = useState(false);
+  const [showCreateAccountDialog, setShowCreateAccountDialog] = useState(false);
+  const [isCreatingSnapshot, setIsCreatingSnapshot] = useState(false);
 
   // Get selected currency and rates from CurrencyContext
   const { usdRate, goldRate, selectedCurrency: globalCurrency } = useCurrency();
-
-  // Log when currency values change
-  useEffect(() => {
-    console.log(
-      "Currency changed:",
-      globalCurrency,
-      "USD Rate:",
-      usdRate,
-      "Gold Rate:",
-      goldRate,
-    );
-  }, [globalCurrency, usdRate, goldRate]);
 
   // Extract all unique account types for filter
   const accountTypes = [
@@ -109,6 +112,7 @@ export default function Accounts({
   const onAddAccount = (accountData: Account) => {
     // Add the new account to the accounts state
     setAccounts([...accounts, accountData]);
+    setShowCreateAccountDialog(false);
   };
 
   // Handle edit account
@@ -135,9 +139,102 @@ export default function Accounts({
     );
   };
 
+  // Handle create snapshot
+  const handleCreateSnapshot = async () => {
+    try {
+      setIsCreatingSnapshot(true);
+      const result = await createSnapshot();
+
+      if (result.success) {
+        toast.success("Financial snapshot has been saved successfully.");
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create snapshot",
+      );
+    } finally {
+      setIsCreatingSnapshot(false);
+    }
+  };
+
   return (
     <div className="flex-1 space-y-4 p-4 pt-2">
-      <AccountsHeader onAddAccount={onAddAccount} />
+      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center sm:gap-0">
+        <h2 className="text-3xl font-bold tracking-tight">Accounts</h2>
+
+        {/* Mobile buttons - visible only on small screens */}
+        <div className="flex w-full gap-2 sm:hidden">
+          <Button
+            onClick={handleCreateSnapshot}
+            disabled={isCreatingSnapshot}
+            variant="outline"
+            className="flex-1 justify-center"
+            size="sm"
+          >
+            <Save className="mr-2 size-4" />
+            <span>{isCreatingSnapshot ? "..." : "Snapshot"}</span>
+          </Button>
+
+          <Button
+            className="flex-1 justify-center"
+            size="sm"
+            onClick={() => setShowCreateAccountDialog(true)}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            <span>Add</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            className="flex-1 justify-center gap-2"
+            size="sm"
+            onClick={() => setShowTransferDialog(true)}
+          >
+            <ArrowLeftRight className="h-4 w-4" />
+            <span>Transfer</span>
+          </Button>
+        </div>
+
+        {/* Desktop menu - visible only on larger screens */}
+        <div className="hidden sm:block">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="default">
+                Actions
+                <MoreHorizontal className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem
+                onClick={handleCreateSnapshot}
+                disabled={isCreatingSnapshot}
+                className="cursor-pointer"
+              >
+                <Save className="mr-2 h-4 w-4" />
+                <span>
+                  {isCreatingSnapshot ? "Creating..." : "Save Snapshot"}
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setShowCreateAccountDialog(true)}
+                className="cursor-pointer"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                <span>Add Account</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setShowTransferDialog(true)}
+                className="cursor-pointer"
+              >
+                <ArrowLeftRight className="mr-2 h-4 w-4" />
+                <span>Transfer</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
 
       <div className="grid gap-4">
         <AccountsSummary
@@ -169,6 +266,25 @@ export default function Accounts({
           displayCurrency={globalCurrency}
         />
       </div>
+
+      {/* Dialogs */}
+      {showTransferDialog && (
+        <TransferDialog
+          accounts={accounts}
+          onClose={() => setShowTransferDialog(false)}
+          onSuccess={() => {
+            setShowTransferDialog(false);
+          }}
+        />
+      )}
+
+      {showCreateAccountDialog && (
+        <CreateAccountDialog
+          onAddAccount={onAddAccount}
+          onCancel={() => setShowCreateAccountDialog(false)}
+          openState={showCreateAccountDialog}
+        />
+      )}
     </div>
   );
 }

@@ -79,7 +79,7 @@ export function DeleteAccountDialog({
           <span className="sr-only">Delete account</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-[95%] p-4 sm:max-w-[425px] sm:p-6">
         <DialogHeader>
           <DialogTitle>Delete Account</DialogTitle>
           <DialogDescription>

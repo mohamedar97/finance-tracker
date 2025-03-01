@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/server/db";
-import { transactions } from "@/server/db/schema";
+import { transactions, accounts } from "@/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import type { Transaction } from "@/lib/types";
 import { auth } from "@/server/auth";
@@ -20,10 +20,25 @@ export async function getTransactions() {
       throw new Error("User not authenticated");
     }
 
-    // Query all transactions for the user
+    // Query all transactions for the user with account names
     const userTransactions = await db
-      .select()
+      .select({
+        id: transactions.id,
+        userId: transactions.userId,
+        accountId: transactions.accountId,
+        currencyRateId: transactions.currencyRateId,
+        payee: transactions.payee,
+        currency: transactions.currency,
+        transactionType: transactions.transactionType,
+        amount: transactions.amount,
+        description: transactions.description,
+        category: transactions.category,
+        createdAt: transactions.createdAt,
+        transactionDate: transactions.transactionDate,
+        accountName: accounts.name,
+      })
       .from(transactions)
+      .leftJoin(accounts, eq(transactions.accountId, accounts.id))
       .where(eq(transactions.userId, userId));
 
     return {
@@ -58,8 +73,23 @@ export async function getTransactionById(transactionId: string) {
 
     // Query the specific transaction, ensuring it belongs to the current user
     const [transaction] = await db
-      .select()
+      .select({
+        id: transactions.id,
+        userId: transactions.userId,
+        accountId: transactions.accountId,
+        currencyRateId: transactions.currencyRateId,
+        payee: transactions.payee,
+        currency: transactions.currency,
+        transactionType: transactions.transactionType,
+        amount: transactions.amount,
+        description: transactions.description,
+        category: transactions.category,
+        createdAt: transactions.createdAt,
+        transactionDate: transactions.transactionDate,
+        accountName: accounts.name,
+      })
       .from(transactions)
+      .leftJoin(accounts, eq(transactions.accountId, accounts.id))
       .where(
         and(
           eq(transactions.id, transactionId),
@@ -107,8 +137,23 @@ export async function getTransactionsByAccountId(accountId: string) {
 
     // Query transactions for the specific account, ensuring it belongs to the current user
     const accountTransactions = await db
-      .select()
+      .select({
+        id: transactions.id,
+        userId: transactions.userId,
+        accountId: transactions.accountId,
+        currencyRateId: transactions.currencyRateId,
+        payee: transactions.payee,
+        currency: transactions.currency,
+        transactionType: transactions.transactionType,
+        amount: transactions.amount,
+        description: transactions.description,
+        category: transactions.category,
+        createdAt: transactions.createdAt,
+        transactionDate: transactions.transactionDate,
+        accountName: accounts.name,
+      })
       .from(transactions)
+      .leftJoin(accounts, eq(transactions.accountId, accounts.id))
       .where(
         and(
           eq(transactions.accountId, accountId),

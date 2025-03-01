@@ -15,7 +15,12 @@ export type Account = InferSelectModel<typeof accounts> & {
 export type NewAccount = InferInsertModel<typeof accounts>;
 
 // Transaction types
-export type Transaction = InferSelectModel<typeof transactions>;
+export type Transaction = InferSelectModel<typeof transactions> & {
+  // Optional fields for currency conversion display
+  convertedAmount?: number;
+  displayCurrency?: Currency;
+  accountName?: string | null;
+};
 export type NewTransaction = InferInsertModel<typeof transactions>;
 
 export interface AccountFormData {
@@ -58,6 +63,20 @@ export interface HistoricalMetrics {
 export interface SnapshotDataPoint {
   date: Date;
   metrics: HistoricalMetrics;
+}
+
+export interface HistorySnapshot {
+  id: string;
+  snapshotDate: string;
+  metrics: HistoricalMetrics;
+  accounts: {
+    id: string;
+    name: string;
+    type: AccountType;
+    balance: string;
+    currency: Currency;
+    isLiability: boolean;
+  }[];
 }
 
 export interface CurrencyData {

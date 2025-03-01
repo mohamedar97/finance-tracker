@@ -60,7 +60,6 @@ export function AccountsCardList({
                         account.displayCurrency || account.currency,
                         account.isLiability,
                       )}
-                      {account.isLiability ? " (debt)" : ""}
                     </div>
                     {account.currency !== displayCurrency && (
                       <div className="text-sm text-muted-foreground">

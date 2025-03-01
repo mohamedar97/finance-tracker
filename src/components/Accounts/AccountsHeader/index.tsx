@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { createSnapshot } from "@/server/actions/snapshots/createSnapshot";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Save } from "lucide-react";
 
 interface AccountsHeaderProps {
   onAddAccount: (accountData: Account) => void;
@@ -33,15 +34,23 @@ export function AccountsHeader({ onAddAccount }: AccountsHeaderProps) {
   }
 
   return (
-    <div className="flex items-center justify-between space-y-2">
+    <div className="flex w-full flex-col items-start justify-between gap-2 sm:flex-row sm:items-center sm:gap-0">
       <h2 className="text-3xl font-bold tracking-tight">Accounts</h2>
-      <div className="flex gap-2">
+      <div className="flex w-full gap-2 sm:w-auto">
         <Button
           onClick={handleCreateSnapshot}
           disabled={isCreatingSnapshot}
           variant="outline"
+          className="flex-1 justify-center sm:flex-auto sm:px-4"
+          size="sm"
         >
-          {isCreatingSnapshot ? "Creating..." : "Save Snapshot"}
+          <Save className="size-4 sm:mr-2" />
+          <span className="hidden sm:inline">
+            {isCreatingSnapshot ? "Creating..." : "Save Snapshot"}
+          </span>
+          <span className="sm:hidden">
+            {isCreatingSnapshot ? "..." : "Snapshot"}
+          </span>
         </Button>
         <CreateAccountDialog onAddAccount={onAddAccount} />
       </div>
