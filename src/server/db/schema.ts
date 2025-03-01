@@ -88,10 +88,23 @@ export const snapshots = createTable("snapshots", {
   currencyRateId: integer("currency_rate_id")
     .notNull()
     .references(() => currencyRates.id),
-  liquidAssets: decimal("liquid_assets", { precision: 15, scale: 2 }).notNull(),
-  savings: decimal("savings", { precision: 15, scale: 2 }).notNull(),
-  liabilities: decimal("liabilities", { precision: 15, scale: 2 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const snapshotsAccounts = createTable("snapshots_accounts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  snapshotId: uuid("snapshot_id")
+    .references(() => snapshots.id)
+    .notNull(),
+  accountId: uuid("account_id").references(() => accounts.id, {
+    onDelete: "set null",
+  }),
+  name: varchar("name", { length: 50 }).notNull(),
+  type: accountTypeEnum("type").notNull(),
+  isLiability: boolean("is_liability").notNull().default(false),
+  balance: decimal("balance", { precision: 15, scale: 2 }).notNull(), // e.g., 1000.00
+  currency: currencyEnum("currency").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // BankStatements Table (Optional)

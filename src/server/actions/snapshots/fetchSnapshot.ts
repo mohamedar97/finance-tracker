@@ -1,6 +1,10 @@
 "use server";
 
-import { accounts, snapshots, currencyRates } from "@/server/db/schema";
+import {
+  snapshots,
+  currencyRates,
+  snapshotsAccounts,
+} from "@/server/db/schema";
 import { db } from "@/server/db";
 import { desc, eq, and, sql } from "drizzle-orm";
 import { auth } from "@/server/auth";
@@ -52,19 +56,61 @@ export async function fetchSnapshot(
     return null;
   }
 
-  // Now that the metrics are directly stored in the snapshots table,
-  // we can return them without additional processing
+  // Get all snapshot account entries for this snapshot
+  const snapshotAccountEntries = await db.query.snapshotsAccounts.findMany({
+    where: eq(snapshotsAccounts.snapshotId, previousSnapshot.id),
+  });
+
+  if (!snapshotAccountEntries.length) {
+    return null;
+  }
+
+  // Get the currency rates for conversion
+  const usdRate = Number(previousRates.usdRate);
+  const goldRate = Number(previousRates.goldGrate);
+
+  // Calculate metrics based on account types - using values directly from snapshotsAccounts
+  // All values will be standardized to EGP
+  let liquidAssets = 0;
+  let savings = 0;
+  let liabilities = 0;
+
+  for (const entry of snapshotAccountEntries) {
+    let balance = Number(entry.balance);
+
+    // Convert balance to EGP based on currency
+    if (entry.currency === "USD" && usdRate > 0) {
+      balance = balance * usdRate; // Convert USD to EGP
+    } else if (entry.currency === "Gold" && goldRate > 0) {
+      balance = balance * goldRate; // Convert Gold to EGP
+    }
+    // If currency is already EGP or rates are missing, use the balance as is
+
+    // Check if this is a liability account - using isLiability directly from snapshotsAccounts
+    if (entry.isLiability) {
+      liabilities += balance;
+    } else {
+      // Not a liability, so it's an asset
+      if (entry.type === "Savings") {
+        savings += balance;
+      } else {
+        // Assuming all non-savings accounts are liquid assets
+        liquidAssets += balance;
+      }
+    }
+  }
+
+  // Calculate totals (all in EGP)
+  const totalAssets = liquidAssets + savings;
+  const netTotal = totalAssets - liabilities;
+
   return {
-    liquidAssets: Number(previousSnapshot.liquidAssets),
-    savings: Number(previousSnapshot.savings),
-    liabilities: Number(previousSnapshot.liabilities),
-    totalAssets:
-      Number(previousSnapshot.liquidAssets) + Number(previousSnapshot.savings),
-    netTotal:
-      Number(previousSnapshot.liquidAssets) +
-      Number(previousSnapshot.savings) -
-      Number(previousSnapshot.liabilities),
-    usdRate: Number(previousRates.usdRate),
-    goldRate: Number(previousRates.goldGrate),
+    liquidAssets,
+    savings,
+    liabilities,
+    totalAssets,
+    netTotal,
+    usdRate,
+    goldRate,
   };
 }
