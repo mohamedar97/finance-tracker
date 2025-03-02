@@ -5,8 +5,9 @@ import { accounts, transactions } from "@/server/db/schema";
 import { auth } from "@/server/auth";
 import { eq } from "drizzle-orm";
 import { convertCurrency } from "@/lib/utils";
-import { revalidatePath } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { NewTransaction } from "@/lib/types";
+import { updateAccountBalance } from "@/server/actions/accounts/updateAccountBalance";
 
 interface TransferData {
   fromAccountId: string;
@@ -149,76 +150,45 @@ export async function transferBetweenAccounts(transferData: TransferData) {
         throw new Error("Failed to create deposit transaction");
       }
 
-      // 3. Update source account balance
-      let newSourceBalance: number;
+      // 3. Update source account balance using updateAccountBalance
+      const sourceUpdateResult = await updateAccountBalance({
+        accountId: fromAccountId,
+        amount: sourceAmount,
+        transactionType: "Expense",
+        isAdding: true,
+        createTransaction: false,
+      });
 
-      if (fromAccount.isLiability) {
-        // For liability accounts, add the amount when money is leaving
-        newSourceBalance = currentSourceBalance + sourceAmount;
-      } else {
-        // For regular accounts, subtract the amount as before
-        newSourceBalance = currentSourceBalance - sourceAmount;
+      if (!sourceUpdateResult.success) {
+        throw new Error(
+          sourceUpdateResult.error || "Failed to update source account balance",
+        );
       }
 
-      await tx
-        .update(accounts)
-        .set({ balance: newSourceBalance.toString() })
-        .where(eq(accounts.id, fromAccountId));
+      // 4. Update destination account balance using updateAccountBalance
+      const destUpdateResult = await updateAccountBalance({
+        accountId: toAccountId,
+        amount: destinationAmount,
+        transactionType: "Income",
+        isAdding: true,
+        createTransaction: false,
+      });
 
-      // 4. Update destination account balance
-      const currentDestBalance = parseFloat(toAccount.balance.toString());
-
-      let newDestBalance: number;
-      let updateFields: { balance: string; isLiability?: boolean } = {
-        balance: "0", // This will be updated below
-      };
-
-      // Track if the destination liability status changed
-      let destinationLiabilityChanged = false;
-
-      if (toAccount.isLiability) {
-        // For liability accounts, subtract the amount instead of adding
-        newDestBalance = currentDestBalance - destinationAmount;
-
-        // If the transfer amount exceeds the liability balance
-        if (newDestBalance < 0) {
-          // Convert to a regular account with the positive difference as balance
-          newDestBalance = Math.abs(newDestBalance);
-          updateFields = {
-            balance: newDestBalance.toString(),
-            isLiability: false,
-          };
-          destinationLiabilityChanged = true;
-        } else {
-          // Regular liability account balance update
-          updateFields = {
-            balance: newDestBalance.toString(),
-          };
-        }
-      } else {
-        // For regular accounts, add the amount as before
-        newDestBalance = currentDestBalance + destinationAmount;
-        updateFields = {
-          balance: newDestBalance.toString(),
-        };
+      if (!destUpdateResult.success) {
+        throw new Error(
+          destUpdateResult.error ||
+            "Failed to update destination account balance",
+        );
       }
-
-      await tx
-        .update(accounts)
-        .set(updateFields)
-        .where(eq(accounts.id, toAccountId));
 
       // Revalidate paths
-      revalidatePath("/accounts");
-      revalidatePath("/transactions");
+      revalidateTag("accounts");
+      revalidateTag("transactions");
 
       return {
         success: true,
         sourceTransaction: withdrawalResult[0],
         destinationTransaction: depositResult[0],
-        newSourceBalance: newSourceBalance.toString(),
-        newDestinationBalance: newDestBalance.toString(),
-        destinationLiabilityChanged,
       };
     });
   } catch (error) {

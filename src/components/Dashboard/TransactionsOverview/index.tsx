@@ -27,22 +27,6 @@ import { useState } from "react";
 import { formatCurrency } from "@/lib/utils";
 import { Transaction } from "@/lib/types";
 
-// Mock categories and accounts - these should also come from the DB eventually
-const categories = [
-  "All",
-  "Salary",
-  "Groceries",
-  "Investment",
-  "Dining",
-  "Utilities",
-];
-const accounts = [
-  "All",
-  "Main Checking",
-  "Investment Portfolio",
-  "Savings Account",
-];
-
 export function TransactionsOverview({
   transactions,
 }: {
@@ -52,6 +36,18 @@ export function TransactionsOverview({
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedAccount, setSelectedAccount] = useState("All");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+
+  // Extract unique categories and accounts from transactions
+  const categories = [
+    "All",
+    ...new Set(
+      transactions.map((t) => t.category || "Uncategorized").filter(Boolean),
+    ),
+  ];
+  const accounts = [
+    "All",
+    ...new Set(transactions.map((t) => t.accountId || "").filter(Boolean)),
+  ];
 
   const filteredTransactions = transactions.filter((transaction) => {
     const matchesSearch = transaction.description
@@ -211,7 +207,7 @@ export function TransactionsOverview({
                 </div>
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <div>{transaction.category || "Uncategorized"}</div>
-                  <div>{transaction.accountId}</div>
+                  <div>{transaction.accountName}</div>
                 </div>
               </div>
             ))}
@@ -228,7 +224,7 @@ export function TransactionsOverview({
                 <TableHead className="whitespace-nowrap">Date</TableHead>
                 <TableHead className="whitespace-nowrap">Description</TableHead>
                 <TableHead className="whitespace-nowrap">Category</TableHead>
-                <TableHead className="whitespace-nowrap">Account ID</TableHead>
+                <TableHead className="whitespace-nowrap">Account</TableHead>
                 <TableHead className="whitespace-nowrap text-right">
                   Amount
                 </TableHead>
@@ -247,7 +243,7 @@ export function TransactionsOverview({
                     {transaction.category || "Uncategorized"}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
-                    {transaction.accountId}
+                    {transaction.accountName}
                   </TableCell>
                   <TableCell
                     className={`whitespace-nowrap text-right ${

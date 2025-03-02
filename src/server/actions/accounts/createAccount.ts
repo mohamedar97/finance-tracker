@@ -4,7 +4,7 @@ import { AccountType, Currency } from "@/lib/types";
 import { auth } from "@/server/auth";
 import { db } from "@/server/db";
 import { accounts } from "@/server/db/schema";
-import { revalidatePath } from "next/cache";
+import { revalidateTag } from "next/cache";
 
 interface CreateAccountInput {
   name: string;
@@ -43,7 +43,7 @@ export async function createAccount(data: CreateAccountInput) {
     }
 
     // Revalidate the accounts page to reflect the changes
-    revalidatePath("/accounts");
+    revalidateTag("accounts");
 
     return {
       success: true,

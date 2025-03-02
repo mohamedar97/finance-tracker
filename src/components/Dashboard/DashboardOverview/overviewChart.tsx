@@ -277,8 +277,6 @@ export function OverviewChart({
     });
   }, [snapshotData, selectedCurrency, usdRate, goldRate]);
 
-  console.log(processedData);
-
   // Calculate Y-axis domain with padding for better visualization
   const yAxisDomain = useMemo(() => {
     if (processedData.length === 0 || selectedMetrics.length === 0) {

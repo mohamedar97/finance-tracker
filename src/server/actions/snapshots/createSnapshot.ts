@@ -9,7 +9,7 @@ import {
 } from "@/server/db/schema";
 import { auth } from "@/server/auth";
 import { desc, eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidateTag } from "next/cache";
 
 /**
  * Creates a new financial snapshot for a user
@@ -80,8 +80,7 @@ export async function createSnapshot() {
     }
 
     // Revalidate the relevant paths to reflect the changes
-    revalidatePath("/dashboard");
-    revalidatePath("/snapshots");
+    revalidateTag("snapshots");
 
     return {
       success: true,

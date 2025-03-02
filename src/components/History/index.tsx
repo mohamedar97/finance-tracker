@@ -30,7 +30,10 @@ import { useCurrency } from "@/lib/contexts/CurrencyContext";
 import { Button } from "@/components/ui/button";
 import { Search, Loader2, FileDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { getAllSnapshots } from "@/server/actions/snapshots/getAllSnapshots";
+import {
+  getAllSnapshots,
+  getAllSnapshotsWithoutPagination,
+} from "@/server/actions/snapshots/getAllSnapshots";
 
 interface HistoryProps {
   snapshots: HistorySnapshot[];
@@ -96,10 +99,10 @@ const History = ({
 
       // Calculate the page size needed to fetch all remaining snapshots
       // We'll fetch everything in one request
-      const result = await getAllSnapshots(page + 1, remainingCount);
+      const result = await getAllSnapshotsWithoutPagination();
 
       if (result.success && result.snapshots) {
-        setAllSnapshots((prev) => [...prev, ...(result.snapshots || [])]);
+        setAllSnapshots((prev) => [...(result.snapshots || [])]);
         setHasMore(false);
         setPage(Math.ceil((totalCount || 0) / 10)); // Update page to last page
       }

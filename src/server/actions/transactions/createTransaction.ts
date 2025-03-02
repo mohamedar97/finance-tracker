@@ -4,7 +4,7 @@ import { db } from "@/server/db";
 import { transactions } from "@/server/db/schema";
 import { auth } from "@/server/auth";
 import { NewTransaction, Transaction } from "@/lib/types";
-import { revalidatePath } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { updateAccountBalance } from "@/server/actions/accounts/updateAccountBalance";
 
 /**
@@ -42,12 +42,13 @@ export async function createTransaction(transactionData: NewTransaction) {
     const transaction = result[0] as Transaction;
 
     // Update the account balance based on the transaction
-    const balanceResult = await updateAccountBalance(
-      transaction.accountId,
-      transaction.amount,
-      transaction.transactionType,
-      true, // isAdding = true since we're adding a new transaction
-    );
+    const balanceResult = await updateAccountBalance({
+      accountId: transaction.accountId,
+      amount: transaction.amount,
+      transactionType: transaction.transactionType,
+      isAdding: true,
+      createTransaction: false,
+    });
 
     if (!balanceResult.success) {
       console.error("Failed to update account balance:", balanceResult.error);
@@ -55,9 +56,9 @@ export async function createTransaction(transactionData: NewTransaction) {
     }
 
     // Revalidate the transactions page
-    revalidatePath("/transactions");
+    revalidateTag("transactions");
     // Also revalidate the accounts page to reflect the updated balance
-    revalidatePath("/accounts");
+    revalidateTag("accounts");
 
     return {
       success: true,

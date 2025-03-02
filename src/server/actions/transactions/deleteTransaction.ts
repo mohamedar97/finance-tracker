@@ -4,7 +4,7 @@ import { db } from "@/server/db";
 import { transactions } from "@/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import { auth } from "@/server/auth";
-import { revalidatePath } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { updateAccountBalance } from "@/server/actions/accounts/updateAccountBalance";
 
 /**
@@ -59,12 +59,13 @@ export async function deleteTransaction(transactionId: string) {
     }
 
     // Update the account balance by reversing the transaction effect
-    const balanceResult = await updateAccountBalance(
-      transactionToDelete.accountId,
-      transactionToDelete.amount,
-      transactionToDelete.transactionType,
-      false, // isAdding = false since we're removing the transaction
-    );
+    const balanceResult = await updateAccountBalance({
+      accountId: transactionToDelete.accountId,
+      amount: transactionToDelete.amount,
+      transactionType: transactionToDelete.transactionType,
+      isAdding: false,
+      createTransaction: false,
+    });
 
     if (!balanceResult.success) {
       console.error("Failed to update account balance:", balanceResult.error);
@@ -72,9 +73,9 @@ export async function deleteTransaction(transactionId: string) {
     }
 
     // Revalidate the transactions page
-    revalidatePath("/transactions");
+    revalidateTag("transactions");
     // Also revalidate the accounts page
-    revalidatePath("/accounts");
+    revalidateTag("accounts");
 
     return {
       success: true,

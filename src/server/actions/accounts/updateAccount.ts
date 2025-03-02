@@ -2,7 +2,7 @@
 
 import { db } from "@/server/db";
 import { accounts } from "@/server/db/schema";
-import { revalidatePath } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { auth } from "@/server/auth";
 import { AccountType } from "@/lib/types";
@@ -65,7 +65,7 @@ export async function updateAccount(data: UpdateAccountInput) {
     }
 
     // Revalidate the accounts page to reflect the changes
-    revalidatePath("/accounts");
+    revalidateTag("accounts");
 
     return {
       success: true,

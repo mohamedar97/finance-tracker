@@ -5,7 +5,7 @@ import { transactions } from "@/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import { auth } from "@/server/auth";
 import { Transaction } from "@/lib/types";
-import { revalidatePath } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { updateAccountBalance } from "@/server/actions/accounts/updateAccountBalance";
 
 /**
@@ -76,44 +76,48 @@ export async function updateTransaction(
         updateData.accountId !== originalTransaction.accountId
       ) {
         // First, reverse the effect on the original account
-        await updateAccountBalance(
-          originalTransaction.accountId,
-          originalTransaction.amount,
-          originalTransaction.transactionType,
-          false, // removing the effect
-        );
+        await updateAccountBalance({
+          accountId: originalTransaction.accountId,
+          amount: originalTransaction.amount,
+          transactionType: originalTransaction.transactionType,
+          isAdding: false,
+          createTransaction: false,
+        });
 
         // Then add the effect to the new account
-        await updateAccountBalance(
-          updatedTransaction.accountId,
-          updatedTransaction.amount,
-          updatedTransaction.transactionType,
-          true, // adding the effect
-        );
+        await updateAccountBalance({
+          accountId: updatedTransaction.accountId,
+          amount: updatedTransaction.amount,
+          transactionType: updatedTransaction.transactionType,
+          isAdding: true,
+          createTransaction: false,
+        });
       } else {
         // If it's the same account but amount or type changed,
         // first reverse the original transaction effect
-        await updateAccountBalance(
-          originalTransaction.accountId,
-          originalTransaction.amount,
-          originalTransaction.transactionType,
-          false, // removing the effect
-        );
+        await updateAccountBalance({
+          accountId: originalTransaction.accountId,
+          amount: originalTransaction.amount,
+          transactionType: originalTransaction.transactionType,
+          isAdding: false,
+          createTransaction: false,
+        });
 
         // Then add the new transaction effect
-        await updateAccountBalance(
-          updatedTransaction.accountId,
-          updatedTransaction.amount,
-          updatedTransaction.transactionType,
-          true, // adding the effect
-        );
+        await updateAccountBalance({
+          accountId: updatedTransaction.accountId,
+          amount: updatedTransaction.amount,
+          transactionType: updatedTransaction.transactionType,
+          isAdding: true,
+          createTransaction: false,
+        });
       }
     }
 
     // Revalidate the transactions page
-    revalidatePath("/transactions");
+    revalidateTag("transactions");
     // Also revalidate the accounts page
-    revalidatePath("/accounts");
+    revalidateTag("accounts");
 
     return {
       success: true,
