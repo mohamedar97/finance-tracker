@@ -19,6 +19,7 @@ import {
 } from "../ui/dropdown-menu";
 import { createSnapshot } from "@/server/actions/snapshots/createSnapshot";
 import { toast } from "sonner";
+import { getAccounts } from "@/server/actions/accounts/getAccounts";
 
 export default function Accounts({
   initialAccounts,
@@ -108,15 +109,35 @@ export default function Accounts({
     return convertedAccount;
   });
 
+  // Add function to refresh accounts data
+  const refreshAccountsData = async () => {
+    try {
+      const response = await getAccounts();
+      if (response.success && response.accounts) {
+        setAccounts(response.accounts);
+      } else if (response.error) {
+        toast.error(response.error);
+      }
+    } catch (error) {
+      console.error("Error refreshing accounts:", error);
+      toast.error("Failed to refresh account data");
+    }
+  };
+
   // Handle add account
-  const onAddAccount = (accountData: Account) => {
+  const onAddAccount = async (accountData: Account) => {
     // Add the new account to the accounts state
     setAccounts([...accounts, accountData]);
     setShowCreateAccountDialog(false);
+    // Refresh accounts data to ensure UI is up to date
+    await refreshAccountsData();
   };
 
   // Handle edit account
-  const handleEditAccount = (id: string, updatedData: Partial<Account>) => {
+  const handleEditAccount = async (
+    id: string,
+    updatedData: Partial<Account>,
+  ) => {
     // Update the account in the accounts state
     setAccounts((currentAccounts) =>
       currentAccounts.map((account) =>
@@ -129,14 +150,18 @@ export default function Accounts({
           : account,
       ),
     );
+    // Refresh accounts data to ensure UI is up to date
+    await refreshAccountsData();
   };
 
   // Handle delete account
-  const handleDeleteAccount = (id: string) => {
+  const handleDeleteAccount = async (id: string) => {
     // Remove the account from the accounts state
     setAccounts((currentAccounts) =>
       currentAccounts.filter((account) => account.id !== id),
     );
+    // Refresh accounts data to ensure UI is up to date
+    await refreshAccountsData();
   };
 
   // Handle create snapshot
@@ -158,6 +183,12 @@ export default function Accounts({
       setIsCreatingSnapshot(false);
     }
   };
+
+  // Add effect to refresh accounts data on mount
+  useEffect(() => {
+    refreshAccountsData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="flex-1 space-y-4 p-4 pt-2">
@@ -272,7 +303,9 @@ export default function Accounts({
         <TransferDialog
           accounts={accounts}
           onClose={() => setShowTransferDialog(false)}
-          onSuccess={() => {
+          onSuccess={async () => {
+            // Refresh account data after successful transfer
+            await refreshAccountsData();
             setShowTransferDialog(false);
           }}
         />

@@ -22,8 +22,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { getAccountById } from "@/server/actions/accounts/getAccountById";
-import { useEffect } from "react";
+
 import { deleteTransaction } from "@/server/actions/transactions/deleteTransaction";
 
 interface TransactionsTableProps {
@@ -43,6 +42,14 @@ export function TransactionsTable({
     useState<Transaction | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [accountsMap, setAccountsMap] = useState<Record<string, string>>({});
+
+  // Sort transactions by date (most recent first)
+  const sortedTransactions = [...transactions].sort((a, b) => {
+    return (
+      new Date(b.transactionDate).getTime() -
+      new Date(a.transactionDate).getTime()
+    );
+  });
 
   // Handle starting edit
   const handleEdit = (transaction: Transaction) => {
@@ -109,7 +116,7 @@ export function TransactionsTable({
 
   return (
     <div className="rounded-md border">
-      <div className="h-[450px] overflow-auto">
+      <div className="h-[450px] overflow-auto md:h-full">
         <Table>
           <TableHeader className="sticky top-0 bg-background">
             <TableRow>
@@ -123,7 +130,7 @@ export function TransactionsTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {transactions.map((transaction) => (
+            {sortedTransactions.map((transaction) => (
               <TableRow key={transaction.id}>
                 <TableCell className="tabular-nums">
                   {new Date(transaction.transactionDate).toLocaleDateString()}

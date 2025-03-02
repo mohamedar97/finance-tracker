@@ -150,7 +150,16 @@ export async function transferBetweenAccounts(transferData: TransferData) {
       }
 
       // 3. Update source account balance
-      const newSourceBalance = currentSourceBalance - sourceAmount;
+      let newSourceBalance: number;
+
+      if (fromAccount.isLiability) {
+        // For liability accounts, add the amount when money is leaving
+        newSourceBalance = currentSourceBalance + sourceAmount;
+      } else {
+        // For regular accounts, subtract the amount as before
+        newSourceBalance = currentSourceBalance - sourceAmount;
+      }
+
       await tx
         .update(accounts)
         .set({ balance: newSourceBalance.toString() })
@@ -158,10 +167,45 @@ export async function transferBetweenAccounts(transferData: TransferData) {
 
       // 4. Update destination account balance
       const currentDestBalance = parseFloat(toAccount.balance.toString());
-      const newDestBalance = currentDestBalance + destinationAmount;
+
+      let newDestBalance: number;
+      let updateFields: { balance: string; isLiability?: boolean } = {
+        balance: "0", // This will be updated below
+      };
+
+      // Track if the destination liability status changed
+      let destinationLiabilityChanged = false;
+
+      if (toAccount.isLiability) {
+        // For liability accounts, subtract the amount instead of adding
+        newDestBalance = currentDestBalance - destinationAmount;
+
+        // If the transfer amount exceeds the liability balance
+        if (newDestBalance < 0) {
+          // Convert to a regular account with the positive difference as balance
+          newDestBalance = Math.abs(newDestBalance);
+          updateFields = {
+            balance: newDestBalance.toString(),
+            isLiability: false,
+          };
+          destinationLiabilityChanged = true;
+        } else {
+          // Regular liability account balance update
+          updateFields = {
+            balance: newDestBalance.toString(),
+          };
+        }
+      } else {
+        // For regular accounts, add the amount as before
+        newDestBalance = currentDestBalance + destinationAmount;
+        updateFields = {
+          balance: newDestBalance.toString(),
+        };
+      }
+
       await tx
         .update(accounts)
-        .set({ balance: newDestBalance.toString() })
+        .set(updateFields)
         .where(eq(accounts.id, toAccountId));
 
       // Revalidate paths
@@ -174,6 +218,7 @@ export async function transferBetweenAccounts(transferData: TransferData) {
         destinationTransaction: depositResult[0],
         newSourceBalance: newSourceBalance.toString(),
         newDestinationBalance: newDestBalance.toString(),
+        destinationLiabilityChanged,
       };
     });
   } catch (error) {
@@ -188,6 +233,7 @@ export async function transferBetweenAccounts(transferData: TransferData) {
       destinationTransaction: undefined,
       newSourceBalance: "",
       newDestinationBalance: "",
+      destinationLiabilityChanged: false,
     };
   }
 }

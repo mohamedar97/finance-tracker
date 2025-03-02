@@ -30,7 +30,7 @@ export function TransferDialog({
 
   const handleSuccess = () => {
     onSuccess();
-    handleClose();
+    setOpen(false);
   };
 
   return (

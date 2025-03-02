@@ -37,9 +37,20 @@ export async function updateAccountBalance(
     // Calculate the balance adjustment
     let balanceAdjustment = numericAmount;
 
-    // For expenses, we subtract from the balance
-    if (transactionType === "Expense") {
-      balanceAdjustment = -numericAmount;
+    if (account.isLiability) {
+      // For liability accounts, the effect is reversed
+      // Income reduces liability, Expense increases liability
+      if (transactionType === "Income") {
+        balanceAdjustment = -numericAmount;
+      }
+      // For Expense, keep the positive adjustment
+    } else {
+      // For regular accounts
+      // Income increases balance, Expense decreases balance
+      if (transactionType === "Expense") {
+        balanceAdjustment = -numericAmount;
+      }
+      // For Income, keep the positive adjustment
     }
 
     // If we're removing a transaction's effect, reverse the adjustment

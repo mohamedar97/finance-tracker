@@ -26,7 +26,11 @@ export function TransactionsSummary({
 
   // Calculate total income
   const totalIncome = transactions
-    .filter((transaction) => transaction.transactionType === "Income")
+    .filter(
+      (transaction) =>
+        transaction.transactionType === "Income" &&
+        transaction.category !== "Transfer",
+    )
     .reduce((sum, transaction) => {
       const amount = Number(transaction.amount);
       // Convert to the selected currency if needed
@@ -45,7 +49,11 @@ export function TransactionsSummary({
 
   // Calculate total expenses
   const totalExpenses = transactions
-    .filter((transaction) => transaction.transactionType === "Expense")
+    .filter(
+      (transaction) =>
+        transaction.transactionType === "Expense" &&
+        transaction.category !== "Transfer",
+    )
     .reduce((sum, transaction) => {
       const amount = Number(transaction.amount);
       // Convert to the selected currency if needed
